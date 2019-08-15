@@ -136,6 +136,9 @@ module.exports = (config) => {
   app.listen({ host, port })
 
   if (config.open === true) {
-    open(uri)
+    open(uri, { wait: true }).catch((err) => {
+      debug('Oops! %O', err)
+      debug('Please open Oasis manually at %s', uri)
+    })
   }
 }

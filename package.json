@@ -57,12 +57,29 @@
     "cspell": "^4.0.23",
     "dependency-check": "4.1.0",
     "nodemon": "^1.19.1",
+    "pkg": "^4.4.0",
     "standard": "^13.1.0"
   },
   "scripts": {
     "start": "node index.js",
     "debug": "nodemon --inspect index.js --debug",
     "test": "test/script.sh",
-    "preversion": "test/script.sh"
+    "preversion": "test/script.sh",
+    "build": "pkg . -o ./build/oasis"
+  },
+  "pkg": {
+    "assets": [
+      "./package.json",
+      "./src/assets/*",
+      "./node_modules/emoji-named-characters/**",
+      "./node_modules/highlight.js/styles/*",
+      "./node_modules/leveldown/prebuilds/**",
+      "./node_modules/sodium-native/prebuilds/**"
+    ],
+    "targets": [
+      "node10-linux-x64",
+      "node10-macos-x64",
+      "node10-win-x64"
+    ]
   }
 }
