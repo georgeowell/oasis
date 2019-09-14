@@ -53,9 +53,9 @@ module.exports = {
     const whoami = await cooler.get(ssb.whoami)
     const myFeedId = whoami.id
 
-    const options = configure({ id: feedId }, customOptions)
+    const options = configure({ id: feedId, reverse:true }, customOptions)
     const source = await cooler.read(
-      ssb.createUserStream,
+      ssb.createHistoryStream,
       options
     )
 
@@ -85,7 +85,8 @@ module.exports = {
 
     const options = configure({
       type: 'post',
-      limit: 60
+      // reverse: true,
+      limit: 50
     }, customOptions)
 
     const source = await cooler.read(
@@ -172,15 +173,8 @@ module.exports = {
     })
 
     const getReplies = (key) => new Promise((resolve, reject) => {
-      const filterQuery = {
-        $filter: {
-          dest: key
-        }
-      }
-
-      cooler.read(ssb.backlinks.read, {
-        query: [filterQuery],
-        index: 'DTA' // use asserted timestamps
+      cooler.read(ssb.tangles, {
+        root: key,
       }).then((referenceStream) => {
         pull(
           referenceStream,
