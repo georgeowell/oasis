@@ -18,49 +18,6 @@ const transform = (ssb, messages, myFeedId) => Promise.all(messages.map(async (m
 
   lodash.set(msg, 'value.meta.md.block', () => markdown(msg.value.content.text, msg.value.content.mentions))
 
-  const filterQuery = {
-    $filter: {
-      dest: msg.key
-    }
-  }
-
-  const referenceStream = await cooler.read(ssb.backlinks.read, {
-    query: [filterQuery],
-    index: 'DTA', // use asserted timestamps
-    private: true,
-    meta: true
-  })
-
-  const rawVotes = await new Promise((resolve, reject) => {
-    pull(
-      referenceStream,
-      pull.filter((ref) => typeof ref.value.content !== 'string' &&
-        ref.value.content.type === 'vote' &&
-        ref.value.content.vote &&
-        typeof ref.value.content.vote.value === 'number' &&
-        ref.value.content.vote.value >= 0 &&
-        ref.value.content.vote.link === msg.key),
-      pull.collect((err, collectedMessages) => {
-        if (err) {
-          reject(err)
-        } else {
-          resolve(collectedMessages)
-        }
-      })
-    )
-  })
-
-  // { @key: 1, @key2: 0, @key3: 1 }
-  //
-  // only one vote per person!
-  const reducedVotes = rawVotes.reduce((acc, vote) => {
-    acc[vote.value.author] = vote.value.content.vote.value
-    return acc
-  }, {})
-
-  // gets *only* the people who voted 1
-  // [ @key, @key, @key ]
-  const voters = Object.entries(reducedVotes).filter((e) => e[1] === 1).map((e) => e[0])
 
   const pendingName = cooler.get(
     ssb.about.socialValue, {
@@ -97,8 +54,6 @@ const transform = (ssb, messages, myFeedId) => Promise.all(messages.map(async (m
     url: avatarUrl
   })
 
-  lodash.set(msg, 'value.meta.votes', voters)
-  lodash.set(msg, 'value.meta.voted', voters.includes(myFeedId))
 
   return msg
 }))

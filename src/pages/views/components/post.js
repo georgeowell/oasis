@@ -53,7 +53,7 @@ module.exports = ({ msg }) => {
     ? { value: 0, class: 'liked' }
     : { value: 1, class: null }
 
-  const likeCount = msg.value.meta.votes.length
+  // const likeCount = msg.value.meta.votes.length
 
   const parentLink = msg.value.content.root != null
     ? a({ href: url.parent }, 'parent')
@@ -122,7 +122,7 @@ module.exports = ({ msg }) => {
           value: likeButton.value,
           class: likeButton.class
         },
-        `❤ ${likeCount}`)),
+        /*`❤ ${likeCount}`*/)),
       a({ href: url.reply }, 'reply'),
       a({ href: url.context }, 'context'),
       parentLink,
