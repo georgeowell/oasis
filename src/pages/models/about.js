@@ -9,18 +9,16 @@ module.exports = {
   name: async (feedId) => {
     const ssb = await cooler.connect()
     return cooler.get(
-      ssb.about.socialValue, {
-        key: 'name',
-        dest: feedId
+      ssb.names.getSignifier, {
+        id: feedId
       }
     )
   },
   image: async (feedId) => {
     const ssb = await cooler.connect()
     const raw = await cooler.get(
-      ssb.about.socialValue, {
-        key: 'image',
-        dest: feedId
+      ssb.names.getImageFor, {
+        id: feedId
       }
     )
 
@@ -32,13 +30,6 @@ module.exports = {
     return raw
   },
   description: async (feedId) => {
-    const ssb = await cooler.connect()
-    const raw = await cooler.get(
-      ssb.about.socialValue, {
-        key: 'description',
-        dest: feedId
-      }
-    )
-    return markdown(raw)
+    return "TODO"
   }
 }

@@ -18,20 +18,8 @@ const transform = (ssb, messages, myFeedId) => Promise.all(messages.map(async (m
 
   lodash.set(msg, 'value.meta.md.block', () => markdown(msg.value.content.text, msg.value.content.mentions))
 
-
-  const pendingName = cooler.get(
-    ssb.about.socialValue, {
-      key: 'name',
-      dest: msg.value.author
-    }
-  )
-
-  const pendingAvatarMsg = cooler.get(
-    ssb.about.socialValue, {
-      key: 'image',
-      dest: msg.value.author
-    }
-  )
+  const pendingName = cooler.get(ssb.names.getSignifier, {id: msg.value.author})
+  const pendingAvatarMsg = cooler.get(ssb.names.getImageFor, {id: msg.value.author})
 
   const pending = [pendingName, pendingAvatarMsg]
   const [name, avatarMsg] = await Promise.all(pending)
