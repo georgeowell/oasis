@@ -10,6 +10,9 @@ const configure = require('./lib/configure')
 const markdown = require('./lib/markdown')
 
 const transform = (ssb, messages, myFeedId) => Promise.all(messages.map(async (msg) => {
+  if (!msg.key) {
+    throw new Error("msg not in key-value form:"+msg.sequence)
+  }
   debug('transforming %s', msg.key)
 
   if (msg == null) {
@@ -53,7 +56,7 @@ module.exports = {
     const whoami = await cooler.get(ssb.whoami)
     const myFeedId = whoami.id
 
-    const options = configure({ id: feedId, reverse:true }, customOptions)
+    const options = configure({ id: feedId, reverse:true, limit:250 }, customOptions)
     const source = await cooler.read(
       ssb.createHistoryStream,
       options
@@ -64,7 +67,6 @@ module.exports = {
         source,
         pull.filter((msg) => typeof msg.value.content !== 'string' &&
           msg.value.content.type === 'post'),
-        pull.take(60),
         pull.collect((err, collectedMessages) => {
           if (err) {
             reject(err)
@@ -85,7 +87,7 @@ module.exports = {
 
     const options = configure({
       type: 'post',
-      // reverse: true,
+      reverse: true,
       limit: 50
     }, customOptions)
 
@@ -116,7 +118,7 @@ module.exports = {
     const whoami = await cooler.get(ssb.whoami)
     const myFeedId = whoami.id
 
-    const options = configure({ id: msgId }, customOptions)
+    const options = configure({ key: msgId }, customOptions)
     const rawMsg = await cooler.get(ssb.get, options)
     debug('got raw message')
 
@@ -124,56 +126,53 @@ module.exports = {
 
     const getRootAncestor = (msg) => new Promise((resolve, reject) => {
       if (msg.key == null) {
-        debug('something is very wrong, we used `{ meta: true }`')
+        debug('something is very wrong, we used `{ meta: true }`'+ parents.length)
         resolve(parents)
-      } else {
-        debug('getting root ancestor of %s', msg.key)
+        return
+      }
 
-        if (typeof msg.value.content === 'string') {
-          debug('private message')
-          // Private message we can't decrypt, stop looking for parents.
-          resolve(parents)
-        }
+      debug('getting root ancestor of %s', msg.key)
 
-        if (typeof msg.value.content.fork === 'string') {
-          debug('fork, get the parent')
-          try {
-            // It's a message reply, get the parent!
-            cooler.get(ssb.get, {
-              id: msg.value.content.fork,
-              meta: true,
-              private: true
-            }).then((fork) => {
-              resolve(getRootAncestor(fork))
-            }).catch(reject)
-          } catch (e) {
-            debug(e)
-            resolve(msg)
-          }
-        } else if (typeof msg.value.content.root === 'string') {
-          debug('thread reply: %s', msg.value.content.root)
-          try {
-            // It's a thread reply, get the parent!
-            cooler.get(ssb.get, {
-              id: msg.value.content.root,
-              meta: true,
-              private: true
-            }).then((root) => {
-              resolve(getRootAncestor(root))
-            }).catch(reject)
-          } catch (e) {
-            debug(e)
-            resolve(msg)
-          }
-        } else {
-          debug('got root ancestor')
+      if (typeof msg.value.content === 'string') {
+        debug('private message')
+        // Private message we can't decrypt, stop looking for parents.
+        resolve(parents)
+      } else if (typeof msg.value.content.fork === 'string') {
+        debug('fork, get the parent')
+        try {
+          // It's a message reply, get the parent!
+          cooler.get(ssb.get, {
+            key: msg.value.content.fork           
+          }).then((fork) => {
+            resolve(getRootAncestor({key: msg.value.content.fork, value: fork}))
+          }).catch(reject)
+        } catch (e) {
+          debug(e)
           resolve(msg)
         }
+      } else if (typeof msg.value.content.root === 'string') {
+        debug('thread reply: %s', msg.value.content.root)
+        try {
+          // It's a thread reply, get the parent!
+          cooler.get(ssb.get, {
+            key: msg.value.content.root
+          }).then((root) => {
+            resolve(getRootAncestor({key: msg.value.content.root, value:root}))
+          }).catch(reject)
+        } catch (e) {
+          debug(e)
+          resolve(msg)
+        }
+      } else {
+        debug('got root ancestor')
+        resolve(msg)
       }
+      
     })
 
     const getReplies = (key) => new Promise((resolve, reject) => {
       cooler.read(ssb.tangles, {
+        keys: true,
         root: key,
       }).then((referenceStream) => {
         pull(
@@ -240,7 +239,7 @@ module.exports = {
     })
 
     debug('about to get root ancestor')
-    const rootAncestor = await getRootAncestor(rawMsg)
+    const rootAncestor = await getRootAncestor({key: msgId, value:rawMsg})
     debug('got root ancestors')
     const deepReplies = await getDeepReplies(rootAncestor.key)
     debug('got deep replies')
@@ -261,11 +260,11 @@ module.exports = {
     const whoami = await cooler.get(ssb.whoami)
     const myFeedId = whoami.id
 
-    const options = configure({ id: msgId }, customOptions)
+    const options = configure({ key: msgId }, customOptions)
     const rawMsg = await cooler.get(ssb.get, options)
     debug('got raw message')
 
-    const transformed = await transform(ssb, [rawMsg], myFeedId)
+    const transformed = await transform(ssb, [{key: msgId, value:rawMsg}], myFeedId)
     debug('transformed: %O', transformed)
     return transformed[0]
   },

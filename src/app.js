@@ -33,6 +33,7 @@ module.exports = (config) => {
 
   app.on('error', (e) => {
     // Output full error objects
+    console.warn(e)
     e.message = e.stack
     e.expose = true
     return null

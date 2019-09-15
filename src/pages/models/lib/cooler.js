@@ -1,15 +1,17 @@
 'use strict'
 
 const ssbClient = require('ssb-client')
-const secretStack = require('secret-stack')
-const ssbConfig = require('ssb-config')
 const debug = require('debug')('oasis')
 
 const rawConnect = () => new Promise((resolve, reject) => {
-  ssbClient((err, api) => {
+  ssbClient({
+    remote: "unix:/home/cryptix/.ssb-go/socket~noauth:test"
+  }, (err, api) => {
     if (err) {
+      console.error(err)
       reject(err)
     } else {
+      console.log("new muxrpc api established")
       resolve(api)
     }
   })
