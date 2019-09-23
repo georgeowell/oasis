@@ -3,16 +3,17 @@
     "language": "en",
     "words": [
         "backlinks",
-        "hyperaxe",
-        "msgs",
-        "whoami",
-        "recps",
-        "socio",
-        "unfollow",
-        "roadmap",
         "christianbundy",
+        "hyperaxe",
+        "hyperscript",
+        "motd",
+        "msgs",
         "nanohtml",
         "patchbay",
-        "hyperscript"
+        "recps",
+        "roadmap",
+        "socio",
+        "unfollow",
+        "whoami"
     ]
 }

@@ -33,13 +33,6 @@ module.exports = (config) => {
   const app = new Koa()
   module.exports = app
 
-  app.on('error', (e) => {
-    // Output full error objects
-    e.message = e.stack
-    e.expose = true
-    return null
-  })
-
   app.use(mount('/assets', assets))
 
   router

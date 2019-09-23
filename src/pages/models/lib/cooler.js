@@ -17,7 +17,6 @@ const rawConnect = () => new Promise((resolve, reject) => {
       createHistoryStream: 'source',
       get: 'sync',
       messagesByType: 'source',
-      publish: 'async',
       status: 'async',
       whoami: 'sync'
     }
