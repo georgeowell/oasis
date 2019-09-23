@@ -54,6 +54,9 @@ module.exports = (config) => {
       ctx.assert(ssbRef.isFeedId(message), 400, 'Invalid feed link')
       return next()
     })
+    .get('/.htaccess', (ctx) => {
+      ctx.body = 'deny from all'
+    })
     .get('/', async (ctx) => {
       ctx.body = await home()
     })
