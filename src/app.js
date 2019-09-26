@@ -39,7 +39,8 @@ module.exports = (config) => {
   router
     .param('imageSize', (imageSize, ctx, next) => {
       const size = Number(imageSize)
-      ctx.assert(typeof size === 'number' && size % 1 === 0 && size > 2 && size < 1e10, 'Invalid image size')
+      const isInteger = size % 1 === 0
+      ctx.assert(isInteger && size > 2 && size < 1e10, 'Invalid image size')
       return next()
     })
     .param('blobId', (blobId, ctx, next) => {
@@ -54,8 +55,8 @@ module.exports = (config) => {
       ctx.assert(ssbRef.isFeedId(message), 400, 'Invalid feed link')
       return next()
     })
-    .get('/.htaccess', (ctx) => {
-      ctx.body = 'deny from all'
+    .get('/robots.txt', (ctx) => {
+      ctx.body = 'User-agent: *\nDisallow: /'
     })
     .get('/', async (ctx) => {
       ctx.body = await publicPage()
@@ -84,6 +85,9 @@ module.exports = (config) => {
     .get('/blob/:blobId', async (ctx) => {
       const { blobId } = ctx.params
       ctx.body = await blob({ blobId })
+
+      // This prevents an auto-download when visiting the URL.
+      ctx.attachment(blobId, { type: 'inline' })
     })
     .get('/image/:imageSize/:blobId', async (ctx) => {
       const { blobId, imageSize } = ctx.params
