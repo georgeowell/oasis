@@ -262,7 +262,7 @@ summary {
 }
 
 .motd {
-  padding: 1rem 0.5rem;
+  padding: 1rem;
   background-color: hsl(45, 100%, 83%);
   margin: 1rem 0;
   color: hsl(45, 100%, 20%);
