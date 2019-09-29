@@ -3,6 +3,7 @@
 const lodash = require('lodash')
 const pull = require('pull-stream')
 const prettyMs = require('pretty-ms')
+const { isRoot, isNestedReply, isReply } = require('ssb-thread-schema')
 const debug = require('debug')('oasis:model-post')
 
 const cooler = require('./lib/cooler')
@@ -148,7 +149,7 @@ const transform = (ssb, messages, myFeedId) =>
     return msg
   }))
 
-module.exports = {
+const post = {
   fromFeed: async (feedId, customOptions = {}) => {
     const ssb = await cooler.connect()
 
@@ -230,6 +231,9 @@ module.exports = {
     const messages = await new Promise((resolve, reject) => {
       pull(
         source,
+        pull.filter((message) => // avoid private messages (!)
+          typeof message.value.content !== 'string'
+        ),
         pull.collect((err, collectedMessages) => {
           if (err) {
             reject(err)
@@ -268,7 +272,11 @@ module.exports = {
           resolve(parents)
         }
 
-        if (typeof msg.value.content.fork === 'string') {
+        if (msg.value.content.type !== 'post') {
+          resolve(msg)
+        }
+
+        if (isNestedReply(msg)) {
           debug('fork, get the parent')
           try {
             // It's a message reply, get the parent!
@@ -283,7 +291,7 @@ module.exports = {
             debug(e)
             resolve(msg)
           }
-        } else if (typeof msg.value.content.root === 'string') {
+        } else if (isReply(msg)) {
           debug('thread reply: %s', msg.value.content.root)
           try {
             // It's a thread reply, get the parent!
@@ -298,8 +306,13 @@ module.exports = {
             debug(e)
             resolve(msg)
           }
-        } else {
+        } else if (isRoot(msg)) {
           debug('got root ancestor')
+          resolve(msg)
+        } else {
+          // type !== "post", probably
+          // this should show up as JSON
+          debug('got mysterious root ancestor')
           resolve(msg)
         }
       }
@@ -373,10 +386,11 @@ module.exports = {
         return Promise.all(replies.map(async (reply) => {
           const deeperReplies = await oneDeeper(reply.key, depth + 1)
           lodash.set(reply, 'value.meta.thread.depth', depth)
+          lodash.set(reply, 'value.meta.thread.reply', true)
           return [reply, deeperReplies]
         }))
       }
-      oneDeeper(key, 1).then((nested) => {
+      oneDeeper(key, 0).then((nested) => {
         const nestedReplies = [...nested]
         const deepReplies = flattenDeep(nestedReplies)
         resolve(deepReplies)
@@ -419,5 +433,43 @@ module.exports = {
 
     debug('Published: %O', body)
     return cooler.get(ssb.publish, body)
+  },
+  reply: async ({ parent, message }) => {
+    message.root = parent.key
+    message.fork = lodash.get(parent, 'value.content.root')
+    message.branch = await post.branch({ root: parent.key })
+    message.type = 'post' // redundant but used for validation
+
+    if (isNestedReply(message) !== true) {
+      const messageString = JSON.stringify(message, null, 2)
+      throw new Error(`message should be valid reply: ${messageString}`)
+    }
+
+    return post.publish(message)
+  },
+  replyAll: async ({ parent, message }) => {
+    const fork = parent.key
+    const root = lodash.get(parent, 'value.content.root', parent.key)
+    message.root = fork || root
+    message.branch = await post.branch({ root: parent.key })
+    message.type = 'post' // redundant but used for validation
+
+    if (isReply(message) !== true) {
+      const messageString = JSON.stringify(message, null, 2)
+      throw new Error(`message should be valid replyAll: ${messageString}`)
+    }
+
+    return post.publish(message)
+  },
+  branch: async ({ root }) => {
+    const ssb = await cooler.connect()
+    const keys = await cooler.get(ssb.tangle.branch, root)
+
+    return Promise.all(keys
+      .map((key) => post.get(key))
+      .filter((message) => lodash.get(message, 'value.content.type') === 'post')
+    )
   }
 }
+
+module.exports = post

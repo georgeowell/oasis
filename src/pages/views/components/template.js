@@ -26,6 +26,7 @@ module.exports = (...elements) => {
     html({ lang: 'en' },
       head(
         title('🏝️  Oasis'),
+        link({ rel: 'stylesheet', href: '/theme.css' }),
         link({ rel: 'stylesheet', href: '/assets/style.css' }),
         link({ rel: 'stylesheet', href: '/highlight/github.css' }),
         meta({

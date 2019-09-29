@@ -34,13 +34,19 @@ module.exports = ({ msg }) => {
     parent: `/thread/${encoded.parent}#${encoded.parent}`,
     avatar: msg.value.meta.author.avatar.url,
     raw: `/raw/${encoded.key}`,
-    reply: `/reply/${encoded.key}`
+    reply: `/reply/${encoded.key}`,
+    replyAll: `/reply-all/${encoded.key}`
   }
 
   const isPrivate = Boolean(msg.value.meta.private)
   const isThreadTarget = Boolean(lodash.get(
     msg,
     'value.meta.thread.target',
+    false
+  ))
+  const isReply = Boolean(lodash.get(
+    msg,
+    'value.meta.thread.reply',
     false
   ))
 
@@ -73,7 +79,7 @@ module.exports = ({ msg }) => {
     messageClasses.push('thread-target')
   }
 
-  if (depth > 0) {
+  if (isReply) {
     messageClasses.push('reply')
   }
 
@@ -131,6 +137,7 @@ module.exports = ({ msg }) => {
         },
         `❤ ${likeCount}`)),
       isPrivate ? null : a({ href: url.reply }, 'reply'),
+      isPrivate ? null : a({ href: url.replyAll }, 'reply all'),
       a({ href: url.context }, 'context'),
       parentLink,
       a({ href: url.raw }, 'raw')
