@@ -19,7 +19,8 @@ const rawConnect = () => new Promise((resolve, reject) => {
       messagesByType: 'source',
       status: 'async',
       whoami: 'sync',
-      tangle: { branch: 'async' }
+      tangle: { branch: 'async' },
+      query: { read: 'source' }
     }
   }, (err, api) => {
     if (err) {

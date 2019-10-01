@@ -6,6 +6,8 @@ const prettyMs = require('pretty-ms')
 const { isRoot, isNestedReply, isReply } = require('ssb-thread-schema')
 const debug = require('debug')('oasis:model-post')
 
+const parallelMap = require('pull-paramap')
+
 const cooler = require('./lib/cooler')
 const configure = require('./lib/configure')
 const markdown = require('./lib/markdown')
@@ -209,6 +211,61 @@ const post = {
     }]
 
     const messages = await getMessages({ myFeedId, customOptions, ssb, query })
+
+    return messages
+  },
+  likes: async (customOptions = {}) => {
+    const ssb = await cooler.connect()
+
+    const whoami = await cooler.get(ssb.whoami)
+    const myFeedId = whoami.id
+
+    const query = {
+      $filter: {
+        value: {
+          author: myFeedId, // for some reason this `author` isn't being respected
+          content: {
+            type: 'vote'
+          }
+        }
+      }
+    }
+
+    const options = configure({
+      query,
+      index: 'DTA',
+      reverse: true
+    }, customOptions)
+
+    const source = await cooler.read(
+      ssb.query.read, options
+    )
+
+    const messages = await new Promise((resolve, reject) => {
+      pull(
+        source,
+        pull.filter((msg) => {
+          return typeof msg.value.content === 'object' &&
+          msg.value.author === myFeedId &&
+          typeof msg.value.content.vote === 'object' &&
+          typeof msg.value.content.vote.link === 'string'
+        }),
+        pull.take(60),
+        parallelMap(async (val, cb) => {
+          const msg = await post.get(val.value.content.vote.link)
+          cb(null, msg)
+        }),
+        pull.collect((err, collectedMessages) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve(collectedMessages)
+          }
+        })
+      )
+    })
+
+    console.log(messages)
 
     return messages
   },
