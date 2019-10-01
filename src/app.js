@@ -29,6 +29,7 @@ const image = require('./pages/image')
 const blob = require('./pages/blob')
 const publish = require('./pages/publish')
 const markdown = require('./pages/markdown')
+const blobList = require('./pages/blob-list')
 
 const defaultTheme = 'unikitty-light'
 
@@ -95,9 +96,17 @@ module.exports = (config) => {
       ctx.type = 'application/json'
       ctx.body = await json(message)
     })
+    .get('/blobs', async (ctx) => {
+      ctx.body = await blobList()
+    })
     .get('/blob/:blobId', async (ctx) => {
       const { blobId } = ctx.params
       ctx.body = await blob({ blobId })
+      if (ctx.body.length === 0) {
+        ctx.response.status = 404
+      } else {
+        ctx.set('Cache-Control', 'public,max-age=31536000,immutable')
+      }
 
       // This prevents an auto-download when visiting the URL.
       ctx.attachment(blobId, { type: 'inline' })

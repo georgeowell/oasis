@@ -15,5 +15,10 @@ module.exports = {
 
     // This does not wait for the blob.
     cooler.get(ssb.blobs.want, blobId)
+  },
+  list: async () => {
+    debug('get blob list')
+    const ssb = await cooler.connect()
+    return cooler.read(ssb.blobs.ls)
   }
 }
