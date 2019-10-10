@@ -149,7 +149,6 @@ pre {
 
 .content > :last-child {
   margin-bottom: 0;
-  padding-bottom: 0;
 }
 
 .message code {
@@ -184,7 +183,6 @@ pre {
     width: 100%;
     max-width: 42rem;
     margin: 1rem;
-    overflow: scroll;
   }
 }
 
@@ -380,4 +378,19 @@ summary {
   user-select: all;
   background: none;
   font-size: 50%;
+}
+
+table {
+  width: 100%;
+}
+
+td,
+th {
+  padding: 0.5rem;
+  outline: var(--thin-stroke) solid var(--bg-status);
+}
+
+th {
+  text-align: left;
+  background-color: var(--bg-status);
 }

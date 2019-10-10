@@ -29,6 +29,7 @@ const image = require('./pages/image')
 const blob = require('./pages/blob')
 const publish = require('./pages/publish')
 const markdown = require('./pages/markdown')
+const inboxPage = require('./pages/inbox')
 
 const defaultTheme = 'unikitty-light'
 
@@ -72,6 +73,9 @@ module.exports = (config) => {
       const { feed } = ctx.params
       ctx.body = await author(feed)
     })
+    .get('/inbox', async (ctx) => {
+      ctx.body = await inboxPage()
+    })
     .get('/hashtag/:channel', async (ctx) => {
       const { channel } = ctx.params
       ctx.body = await hashtag(channel)
@@ -79,7 +83,8 @@ module.exports = (config) => {
     .get('/theme.css', (ctx) => {
       const theme = ctx.cookies.get('theme') || defaultTheme
 
-      const filePath = `base16-styles/css-variables/base16-${theme}.css`
+      const packageName = '@fraction/base16-css'
+      const filePath = `${packageName}/src/base16-${theme}.css`
       ctx.type = 'text/css'
       ctx.body = requireStyle(filePath)
     })
@@ -94,6 +99,11 @@ module.exports = (config) => {
     .get('/blob/:blobId', async (ctx) => {
       const { blobId } = ctx.params
       ctx.body = await blob({ blobId })
+      if (ctx.body.length === 0) {
+        ctx.response.status = 404
+      } else {
+        ctx.set('Cache-Control', 'public,max-age=31536000,immutable')
+      }
 
       // This prevents an auto-download when visiting the URL.
       ctx.attachment(blobId, { type: 'inline' })

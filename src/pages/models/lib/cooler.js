@@ -10,9 +10,16 @@ const server = flotilla({ ws: { http: false } })
 const rawConnect = () => new Promise((resolve, reject) => {
   ssbClient({
     manifest: {
-      about: { socialValue: 'async' },
+      about: {
+        socialValue: 'async',
+        read: 'source'
+      },
       backlinks: { read: 'source' },
-      blobs: { get: 'source', want: 'async' },
+      blobs: {
+        get: 'source',
+        ls: 'source',
+        want: 'async'
+      },
       createUserStream: 'source',
       createHistoryStream: 'source',
       get: 'sync',
