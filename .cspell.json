@@ -20,6 +20,8 @@
         "summerfruit",
         "unfollow",
         "unikitty",
-        "whoami"
+        "whoami",
+        "sameorigin",
+        "nosniff"
     ]
 }

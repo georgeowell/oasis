@@ -42,6 +42,23 @@ module.exports = (config) => {
 
   app.use(mount('/assets', assets))
 
+  // headers
+  app.use(async (ctx, next) => {
+    await next()
+
+    // Disallow scripts.
+    ctx.set('Content-Security-Policy', 'script-src none')
+
+    // Disallow <iframe> embeds from other domains.
+    ctx.set('X-Frame-Options', 'SAMEORIGIN')
+
+    // Disallow browsers overwriting declared media types.
+    ctx.set('X-Content-Type-Options', 'nosniff')
+
+    // Disallow sharing referrer with other domains.
+    ctx.set('Referrer-Policy', 'same-origin')
+  })
+
   router
     .param('imageSize', (imageSize, ctx, next) => {
       const size = Number(imageSize)
@@ -97,6 +114,16 @@ module.exports = (config) => {
       ctx.body = await json(message)
     })
     .get('/blob/:blobId', async (ctx) => {
+      const subdomains = JSON.stringify(ctx.subdomains)
+      const singleBlob = JSON.stringify(['blob'])
+
+      if (subdomains !== singleBlob) {
+        const u = ctx.request.URL
+        u.host = `blob.${u.host}`
+        ctx.redirect(u)
+        return
+      }
+
       const { blobId } = ctx.params
       ctx.body = await blob({ blobId })
       if (ctx.body.length === 0) {
@@ -180,6 +207,8 @@ module.exports = (config) => {
     })
 
   app.use(router.routes())
+
+  app.subdomainOffset = config.subdomains + 1
 
   const { host } = config
   const { port } = config
