@@ -1,20 +1,22 @@
 'use strict'
 
-const lodash = require('lodash')
-const pull = require('pull-stream')
-const prettyMs = require('pretty-ms')
-const { isRoot, isNestedReply, isReply } = require('ssb-thread-schema')
 const debug = require('debug')('oasis:model-post')
-
+const lodash = require('lodash')
 const parallelMap = require('pull-paramap')
+const prettyMs = require('pretty-ms')
+const pull = require('pull-stream')
+const { isRoot, isReply } = require('ssb-thread-schema')
 
-const cooler = require('./lib/cooler')
+// HACK: https://github.com/ssbc/ssb-thread-schema/issues/4
+const isNestedReply = require('ssb-thread-schema/post/nested-reply/validator')
+
 const configure = require('./lib/configure')
+const cooler = require('./lib/cooler')
 const markdown = require('./lib/markdown')
 
-const maxMessages = 128
+const maxMessages = 64
 
-const getMessages = async ({ myFeedId, customOptions, ssb, query }) => {
+const getMessages = async ({ myFeedId, customOptions, ssb, query, filter }) => {
   const options = configure({ query, index: 'DTA' }, customOptions)
 
   const source = await cooler.read(
@@ -27,7 +29,7 @@ const getMessages = async ({ myFeedId, customOptions, ssb, query }) => {
       pull.filter((msg) =>
         typeof msg.value.content !== 'string' &&
         msg.value.content.type === 'post' &&
-        msg.value.author !== myFeedId
+        (filter == null || filter(msg) === true)
       ),
       pull.take(maxMessages),
       pull.collect((err, collectedMessages) => {
@@ -196,7 +198,13 @@ const post = {
       }
     }]
 
-    const messages = await getMessages({ myFeedId, customOptions, ssb, query })
+    const messages = await getMessages({
+      myFeedId,
+      customOptions,
+      ssb,
+      query,
+      filter: (msg) => msg.value.author !== myFeedId
+    })
 
     return messages
   },
@@ -216,22 +224,19 @@ const post = {
 
     return messages
   },
-  likes: async (customOptions = {}) => {
+  likes: async ({ feed }, customOptions = {}) => {
     const ssb = await cooler.connect()
 
-    const whoami = await cooler.get(ssb.whoami)
-    const myFeedId = whoami.id
-
-    const query = {
+    const query = [{
       $filter: {
         value: {
-          author: myFeedId, // for some reason this `author` isn't being respected
+          author: feed,
           content: {
             type: 'vote'
           }
         }
       }
-    }
+    }]
 
     const options = configure({
       query,
@@ -248,7 +253,7 @@ const post = {
         source,
         pull.filter((msg) => {
           return typeof msg.value.content === 'object' &&
-          msg.value.author === myFeedId &&
+          msg.value.author === feed &&
           typeof msg.value.content.vote === 'object' &&
           typeof msg.value.content.vote.link === 'string'
         }),
@@ -269,15 +274,14 @@ const post = {
 
     return messages
   },
-  latest: async (customOptions = {}) => {
+  comments: async (customOptions = {}) => {
     const ssb = await cooler.connect()
 
     const whoami = await cooler.get(ssb.whoami)
     const myFeedId = whoami.id
 
     const options = configure({
-      type: 'post',
-      limit: maxMessages
+      type: 'post'
     }, customOptions)
 
     const source = await cooler.read(
@@ -289,8 +293,45 @@ const post = {
       pull(
         source,
         pull.filter((message) => // avoid private messages (!)
-          typeof message.value.content !== 'string'
+          typeof message.value.content !== 'string' &&
+          isRoot(message) === false
         ),
+        pull.take(maxMessages),
+        pull.collect((err, collectedMessages) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve(transform(ssb, collectedMessages, myFeedId))
+          }
+        })
+      )
+    })
+
+    return messages
+  },
+  threads: async (customOptions = {}) => {
+    const ssb = await cooler.connect()
+
+    const whoami = await cooler.get(ssb.whoami)
+    const myFeedId = whoami.id
+
+    const options = configure({
+      type: 'post'
+    }, customOptions)
+
+    const source = await cooler.read(
+      ssb.messagesByType,
+      options
+    )
+
+    const messages = await new Promise((resolve, reject) => {
+      pull(
+        source,
+        pull.filter((message) => // avoid private messages (!)
+          typeof message.value.content !== 'string' &&
+          isRoot(message)
+        ),
+        pull.take(maxMessages),
         pull.collect((err, collectedMessages) => {
           if (err) {
             reject(err)
@@ -330,6 +371,7 @@ const post = {
         }
 
         if (msg.value.content.type !== 'post') {
+          debug('not a post')
           resolve(msg)
         }
 
@@ -369,7 +411,8 @@ const post = {
         } else {
           // type !== "post", probably
           // this should show up as JSON
-          debug('got mysterious root ancestor')
+          debug('got mysterious root ancestor that fails all known schemas')
+          debug('%O', msg)
           resolve(msg)
         }
       }
@@ -522,10 +565,7 @@ const post = {
     const ssb = await cooler.connect()
     const keys = await cooler.get(ssb.tangle.branch, root)
 
-    return Promise.all(keys
-      .map((key) => post.get(key))
-      .filter((message) => lodash.get(message, 'value.content.type') === 'post')
-    )
+    return keys
   },
   inbox: async (customOptions = {}) => {
     const ssb = await cooler.connect()
@@ -534,8 +574,7 @@ const post = {
     const myFeedId = whoami.id
 
     const options = configure({
-      type: 'post',
-      private: true
+      type: 'post'
     }, customOptions)
 
     const source = await cooler.read(

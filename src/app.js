@@ -19,7 +19,7 @@ const json = require('./pages/json')
 const thread = require('./pages/thread')
 const like = require('./pages/like')
 const likesPage = require('./pages/likes')
-const status = require('./pages/status')
+const meta = require('./pages/meta')
 const mentions = require('./pages/mentions')
 const reply = require('./pages/reply')
 const replyAll = require('./pages/reply-all')
@@ -51,7 +51,7 @@ module.exports = (config) => {
       'img-src \'self\'',
       'form-action \'self\'',
       'media-src \'self\'',
-      'style-src \'self\''
+      'style-src \'self\' \'unsafe-inline\''
     ].join('; ')
 
     // Disallow scripts.
@@ -103,7 +103,13 @@ module.exports = (config) => {
       ctx.body = 'User-agent: *\nDisallow: /'
     })
     .get('/', async (ctx) => {
+      ctx.redirect('/public/threads')
+    })
+    .get('/public/comments', async (ctx) => {
       ctx.body = await publicPage()
+    })
+    .get('/public/threads', async (ctx) => {
+      ctx.body = await publicPage({ rootsOnly: true })
     })
     .get('/author/:feed', async (ctx) => {
       const { feed } = ctx.params
@@ -150,14 +156,15 @@ module.exports = (config) => {
       ctx.type = 'image/png'
       ctx.body = await image({ blobId, imageSize: Number(imageSize) })
     })
-    .get('/status/', async (ctx) => {
+    .get('/meta/', async (ctx) => {
       const theme = ctx.cookies.get('theme') || defaultTheme
-      ctx.body = await status({ theme })
+      ctx.body = await meta({ theme })
     })
-    .get('/likes/', async (ctx) => {
-      ctx.body = await likesPage()
+    .get('/likes/:feed', async (ctx) => {
+      const { feed } = ctx.params
+      ctx.body = await likesPage({ feed })
     })
-    .get('/readme/', async (ctx) => {
+    .get('/meta/readme/', async (ctx) => {
       ctx.body = await markdown(config.readme)
     })
     .get('/mentions/', async (ctx) => {
@@ -179,18 +186,18 @@ module.exports = (config) => {
       const { message } = ctx.params
       const text = String(ctx.request.body.text)
       ctx.body = await publishReply({ message, text })
-      ctx.redirect('/')
+      ctx.redirect(`/thread/${encodeURIComponent(message)}`)
     })
     .post('/reply-all/:message', koaBody(), async (ctx) => {
       const { message } = ctx.params
       const text = String(ctx.request.body.text)
       ctx.body = await publishReplyAll({ message, text })
-      ctx.redirect('/')
+      ctx.redirect(`/thread/${encodeURIComponent(message)}`)
     })
     .post('/publish/', koaBody(), async (ctx) => {
       const text = String(ctx.request.body.text)
       ctx.body = await publish({ text })
-      ctx.redirect('/')
+      ctx.redirect('/public/threads')
     })
     .post('/like/:message', koaBody(), async (ctx) => {
       const { message } = ctx.params
