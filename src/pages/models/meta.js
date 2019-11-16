@@ -11,11 +11,25 @@ module.exports = {
   },
   get: async (msgId) => {
     const ssb = await cooler.connect()
-    return cooler.get(ssb.get, {
+
+    const message = await cooler.get(ssb.get, {
       id: msgId,
       meta: true,
       private: true
     })
+
+    const publicWebHosting = await cooler.get(
+      ssb.about.socialValue, {
+        key: 'publicWebHosting',
+        dest: message.value.author
+      }
+    )
+
+    if (publicWebHosting !== true) {
+      return { value: '[Public messages are redacted by default. Install SSB to see this message.]' }
+    } else {
+      return message
+    }
   },
   status: async () => {
     const ssb = await cooler.connect()
