@@ -16,7 +16,7 @@ const markdown = require('./lib/markdown')
 
 const maxMessages = 64
 
-const getMessages = async ({ myFeedId, customOptions, ssb, query, filter }) => {
+const getMessages = async ({ myFeedId, customOptions, ssb, query, filter = null }) => {
   const options = configure({ query, index: 'DTA' }, customOptions)
 
   const source = await cooler.read(
@@ -116,8 +116,21 @@ const transform = (ssb, messages, myFeedId) =>
       }
     )
 
-    const pending = [pendingName, pendingAvatarMsg]
-    const [name, avatarMsg] = await Promise.all(pending)
+    const pendingPublicWebHosting = cooler.get(
+      ssb.about.socialValue, {
+        key: 'publicWebHosting',
+        dest: msg.value.author
+      }
+    )
+
+    const pending = [pendingName, pendingAvatarMsg, pendingPublicWebHosting]
+    let [name, avatarMsg, publicWebHosting] = await Promise.all(pending)
+
+    if (publicWebHosting !== true) {
+      name = '[Redacted]'
+      avatarMsg = ''
+      msg.value.content.text = '[Public messages are redacted by default. Join SSB to see this message.]'
+    }
 
     const nullImage = `&${'0'.repeat(43)}=.sha256`
     const avatarId = avatarMsg != null && typeof avatarMsg.link === 'string'

@@ -6,9 +6,22 @@ const pull = require('pull-stream')
 
 const nullImage = `&${'0'.repeat(43)}=.sha256`
 
+const isPublic = (ssb) => (dest) =>
+  cooler.get(
+    ssb.about.socialValue, {
+      key: 'publicWebHosting',
+      dest
+    }
+  )
+
 module.exports = {
   name: async (feedId) => {
     const ssb = await cooler.connect()
+
+    if (await isPublic(ssb)(feedId) !== true) {
+      return '[Redacted]'
+    }
+
     return cooler.get(
       ssb.about.socialValue, {
         key: 'name',
@@ -18,6 +31,9 @@ module.exports = {
   },
   image: async (feedId) => {
     const ssb = await cooler.connect()
+    if (await isPublic(ssb)(feedId) !== true) {
+      return '&0000000000000000000000000000000000000000000=.sha256'
+    }
     const raw = await cooler.get(
       ssb.about.socialValue, {
         key: 'image',
@@ -34,6 +50,11 @@ module.exports = {
   },
   description: async (feedId) => {
     const ssb = await cooler.connect()
+
+    if (await isPublic(ssb)(feedId) !== true) {
+      return '[Public messages are redacted by default. Join SSB to see this message.]'
+    }
+
     const raw = await cooler.get(
       ssb.about.socialValue, {
         key: 'description',
