@@ -19,7 +19,7 @@ module.exports = {
     const ssb = await cooler.connect()
 
     if (await isPublic(ssb)(feedId) !== true) {
-      return 'Redacted'
+      return '[Redacted]'
     }
 
     return cooler.get(
@@ -52,7 +52,7 @@ module.exports = {
     const ssb = await cooler.connect()
 
     if (await isPublic(ssb)(feedId) !== true) {
-      return '[Public messages are redacted by default. Install SSB to see this message.]'
+      return '[Public messages are redacted by default. Join SSB to see this message.]'
     }
 
     const raw = await cooler.get(

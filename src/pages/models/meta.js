@@ -26,7 +26,7 @@ module.exports = {
     )
 
     if (publicWebHosting !== true) {
-      return { value: '[Public messages are redacted by default. Install SSB to see this message.]' }
+      return { value: '[Public messages are redacted by default. Join SSB to see this message.]' }
     } else {
       return message
     }
