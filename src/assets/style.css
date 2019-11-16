@@ -314,15 +314,14 @@ nav > ul > li {
 }
 
 progress {
+  background: var(--bg);
   display: block;
   width: 100%;
 }
 
 progress::-moz-progress-bar,
-progress::-webkit-progress-value,
-progress {
+progress::-webkit-progress-value {
   background: var(--blue);
-  border-color: var(--blue);
 }
 
 textarea {
