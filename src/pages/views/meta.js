@@ -20,8 +20,19 @@ const {
 } = require('hyperaxe')
 const template = require('./components/template')
 
-module.exports = ({ status, peers, theme, themeNames }) => {
+const d3nLine = require('d3node-linechart')
+
+// create output files
+
+module.exports = ({ status, peers, theme, themeNames, latency }) => {
   const max = status.sync.since
+
+  const out = d3nLine({
+    data: latency,
+    lineColors: ['blue', 'orange'],
+    width: 800,
+    height: 600
+  }).svgString()
 
   const progressElements = Object.entries(status.sync.plugins).map((e) => {
     const [key, val] = e
@@ -101,7 +112,8 @@ module.exports = ({ status, peers, theme, themeNames }) => {
       progressElements,
       peerList.length > 0
         ? [h3('Peers'), ul(peerList)]
-        : null
+        : null,
+      div({ innerHTML: out })
     )
   )
 }

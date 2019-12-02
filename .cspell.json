@@ -7,20 +7,21 @@
         "christianbundy",
         "hyperaxe",
         "hyperscript",
+        "linechart",
         "monokai",
         "msgs",
         "nanohtml",
+        "nosniff",
         "paramap",
         "patchbay",
         "rebecca",
         "recps",
         "roadmap",
+        "sameorigin",
         "socio",
         "summerfruit",
         "unfollow",
         "unikitty",
-        "whoami",
-        "sameorigin",
-        "nosniff"
+        "whoami"
     ]
 }

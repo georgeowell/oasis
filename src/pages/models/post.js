@@ -14,7 +14,7 @@ const configure = require('./lib/configure')
 const cooler = require('./lib/cooler')
 const markdown = require('./lib/markdown')
 
-const maxMessages = 64
+const maxMessages = 128
 
 const getMessages = async ({ myFeedId, customOptions, ssb, query, filter = null }) => {
   const options = configure({ query, index: 'DTA' }, customOptions)

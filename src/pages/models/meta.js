@@ -21,6 +21,32 @@ module.exports = {
     const ssb = await cooler.connect()
     return cooler.get(ssb.status)
   },
+  latency: async () => {
+    const ssb = await cooler.connect()
+
+    const hour = 1000 * 60 * 60
+    const source = await cooler.read(ssb.createLogStream, {
+      gte: Date.now() - hour * 24,
+      meta: true
+    })
+
+    return new Promise((resolve, reject) => {
+      pull(
+        source,
+        pull.map((message) => {
+          const result = {
+            key: message.timestamp / 1000,
+            value: (message.timestamp - message.value.timestamp) / 1000
+          }
+          return result
+        }),
+        pull.collect((err, val) => {
+          if (err) return reject(err)
+          resolve(val)
+        })
+      )
+    })
+  },
   peers: async () => {
     const ssb = await cooler.connect()
     const peersSource = await cooler.read(ssb.conn.peers)

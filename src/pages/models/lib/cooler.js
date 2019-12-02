@@ -24,6 +24,7 @@ const rawConnect = () => new Promise((resolve, reject) => {
         peers: 'source'
       },
       createUserStream: 'source',
+      createLogStream: 'source',
       createHistoryStream: 'source',
       get: 'sync',
       messagesByType: 'source',
