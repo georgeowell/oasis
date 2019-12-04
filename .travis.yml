@@ -3,8 +3,8 @@ language: node_js
 
 # Both latest Node.js and latest LTS.
 node_js: 
+  - lts/current
   - lts/active
-  - lts/maintenance
   - node
 
 # All of the operating systems!
