@@ -1759,9 +1759,9 @@ ee-first@1.1.1:
   integrity sha1-WQxhFWsK4vTwJVcyoViyZrxWsh0=
 
 electron-to-chromium@^1.3.317:
-  version "1.3.321"
-  resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.3.321.tgz#913869f5ec85daabba0e75c9c314b4bf26cdb01e"
-  integrity sha512-jJy/BZK2s2eAjMPXVMSaCmo7/pSY2aKkfQ+LoAb5Wk39qAhyP9r8KU74c4qTgr9cD/lPUhJgReZxxqU0n5puog==
+  version "1.3.322"
+  resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.3.322.tgz#a6f7e1c79025c2b05838e8e344f6e89eb83213a8"
+  integrity sha512-Tc8JQEfGQ1MzfSzI/bTlSr7btJv/FFO7Yh6tanqVmIWOuNCu6/D1MilIEgLtmWqIrsv+o4IjpLAhgMBr/ncNAA==
 
 emoji-named-characters@~1.0.2:
   version "1.0.2"
@@ -4378,9 +4378,9 @@ multiblob-http@^1.0.0:
     stream-to-pull-stream "^1.7.0"
 
 multiblob@^1.12.0:
-  version "1.13.5"
-  resolved "https://registry.yarnpkg.com/multiblob/-/multiblob-1.13.5.tgz#bf680907c567b28d5abb30c38915b47677826627"
-  integrity sha512-R6dxF2OnTc1/G3rhcEKUVYIYiYBakNYCK3rfHKyvapCL/31o1xMfsjbfAHRDBx/T6wNHQ+2PgyjHAUPwRZaT8w==
+  version "1.13.6"
+  resolved "https://registry.yarnpkg.com/multiblob/-/multiblob-1.13.6.tgz#0d2e2fed1eec91ae0becd8f00a267601982bcf89"
+  integrity sha512-1yKhCPwLXitdw3b3OF+SE0+vD06NGcL/7yumKWCrPkJaMdNv2gaO0lCukZaFKYyu05GimwXEynxGWPNBv5qbBA==
   dependencies:
     blake2s "^1.0.1"
     cont "^1.0.1"
