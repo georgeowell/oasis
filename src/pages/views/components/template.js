@@ -46,8 +46,8 @@ module.exports = (...elements) => {
         ),
         nav(
           ul(
-            li(a({ href: '/public/threads' }, 'threads')),
-            li(a({ href: '/public/comments' }, 'comments')),
+            li(a({ href: '/public/popular' }, 'popular')),
+            li(a({ href: '/public/latest' }, 'latest')),
             li(a({ href: '/inbox' }, 'inbox')),
             li(a({ href: '/mentions' }, 'mentions')),
             li(a({ href: '/profile' }, 'profile')),

@@ -2,9 +2,10 @@
 
 const debug = require('debug')('oasis:model-post')
 const lodash = require('lodash')
-const parallelMap = require('pull-paramap')
 const prettyMs = require('pretty-ms')
 const pull = require('pull-stream')
+const pullParallelMap = require('pull-paramap')
+const pullSort = require('pull-sort')
 const { isRoot, isReply } = require('ssb-thread-schema')
 
 // HACK: https://github.com/ssbc/ssb-thread-schema/issues/4
@@ -15,33 +16,6 @@ const cooler = require('./lib/cooler')
 const markdown = require('./lib/markdown')
 
 const maxMessages = 64
-
-const dogFoodWords = [
-  '```',
-  'git',
-  'javascript',
-  'js',
-  'manyverse',
-  'multiserver',
-  'muxrpc',
-  'node',
-  'oasis',
-  'patchbay',
-  'patchfoo',
-  'patchfox',
-  'patchwork',
-  'pull-stream',
-  'secret-handshake',
-  'secret-stack',
-  'ssbc'
-]
-
-const dogFoodFilter = pull.filter((message) => {
-  const lower = message.value.content.text.toLowerCase()
-  return dogFoodWords.some((word) =>
-    lower.includes(word)
-  ) === false
-})
 
 const getMessages = async ({ myFeedId, customOptions, ssb, query, filter = null }) => {
   const options = configure({ query, index: 'DTA' }, customOptions)
@@ -308,7 +282,7 @@ const post = {
           typeof msg.value.content.vote.link === 'string'
         }),
         pull.take(maxMessages),
-        parallelMap(async (val, cb) => {
+        pullParallelMap(async (val, cb) => {
           const msg = await post.get(val.value.content.vote.link)
           cb(null, msg)
         }),
@@ -324,7 +298,7 @@ const post = {
 
     return messages
   },
-  comments: async (customOptions = {}) => {
+  latest: async (customOptions = {}) => {
     const ssb = await cooler.connect()
 
     const whoami = await cooler.get(ssb.whoami)
@@ -343,12 +317,8 @@ const post = {
       pull(
         source,
         pull.filter((message) => // avoid private messages (!)
-          typeof message.value.content !== 'string' &&
-          isRoot(message) === false
+          typeof message.value.content !== 'string'
         ),
-        customOptions.dogFood === false
-          ? dogFoodFilter
-          : null,
         pull.take(maxMessages),
         pull.collect((err, collectedMessages) => {
           if (err) {
@@ -362,14 +332,18 @@ const post = {
 
     return messages
   },
-  threads: async (customOptions = {}) => {
+  popular: async (customOptions = {}) => {
     const ssb = await cooler.connect()
 
     const whoami = await cooler.get(ssb.whoami)
     const myFeedId = whoami.id
 
+    const now = new Date()
+    const yesterday = Number(now) - 1000 * 60 * 60 * 24 * 1
+
     const options = configure({
-      type: 'post'
+      type: 'vote',
+      gt: yesterday
     }, customOptions)
 
     const source = await cooler.read(
@@ -380,20 +354,57 @@ const post = {
     const messages = await new Promise((resolve, reject) => {
       pull(
         source,
-        pull.filter((message) => // avoid private messages (!)
-          typeof message.value.content !== 'string' &&
-          isRoot(message)
-        ),
-        customOptions.dogFood === false
-          ? dogFoodFilter
-          : null,
-        pull.take(maxMessages),
-        pull.collect((err, collectedMessages) => {
+        pull.filter((msg) => {
+          return typeof msg.value.content === 'object' &&
+          typeof msg.value.content.vote === 'object' &&
+          typeof msg.value.content.vote.link === 'string'
+        }),
+        pull.reduce((acc, cur) => {
+          const target = cur.value.content.vote.link
+
+          const old = acc[target] || 0
+          acc[target] = old + 1
+
+          return acc
+        }, {}, (err, obj) => {
           if (err) {
-            reject(err)
-          } else {
-            resolve(transform(ssb, collectedMessages, myFeedId))
+            return reject(err)
           }
+
+          // HACK: Can we do this without a reduce()? I think this makes the
+          // stream much slower than it needs to be. Also, we should probably
+          // be indexing these rather than building the stream on refresh.
+
+          const arr = Object.entries(obj)
+          const length = arr.length
+
+          pull(
+            pull.values(arr),
+            pullSort(([aKey, aVal], [bKey, bVal]) =>
+              bVal - aVal
+            ),
+            pull.take(Math.min(length, maxMessages)),
+            pull.map(([key, value]) => key),
+            pullParallelMap(async (key, cb) => {
+              try {
+                const msg = await post.get(key)
+                cb(null, msg)
+              } catch (e) {
+                cb(null, null)
+              }
+            }),
+            pull.filter((message) => // avoid private messages (!)
+              message &&
+              typeof message.value.content !== 'string'
+            ),
+            pull.collect((err, collectedMessages) => {
+              if (err) {
+                reject(err)
+              } else {
+                resolve(transform(ssb, collectedMessages, myFeedId))
+              }
+            })
+          )
         })
       )
     })
