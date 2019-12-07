@@ -30,7 +30,14 @@ const rawConnect = () => new Promise((resolve, reject) => {
       status: 'async',
       whoami: 'sync',
       tangle: { branch: 'async' },
-      query: { read: 'source' }
+      query: { read: 'source' },
+      friends: {
+        isFollowing: 'async',
+        isBlocking: 'async'
+      },
+      search: {
+        query: 'source'
+      }
     }
   }, (err, api) => {
     if (err) {

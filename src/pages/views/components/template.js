@@ -46,15 +46,16 @@ module.exports = (...elements) => {
         ),
         nav(
           ul(
-            li(a({ href: '/public/popular' }, 'popular')),
+            li(a({ href: '/' }, 'popular')),
             li(a({ href: '/public/latest' }, 'latest')),
             li(a({ href: '/inbox' }, 'inbox')),
             li(a({ href: '/mentions' }, 'mentions')),
             li(a({ href: '/profile' }, 'profile')),
+            li(a({ href: '/search' }, 'search')),
             li(a({ href: '/meta' }, 'meta'))
           )
         ),
-        main({ id: 'content' }, ...elements)
+        main({ id: 'content' }, elements)
       ))
 
   const result = doctypeString + nodes.outerHTML

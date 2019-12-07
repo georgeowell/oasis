@@ -1,12 +1,12 @@
 # Roadmap
 
 - [ ] Get
-  - [ ] Author
+  - [x] Author
     - [x] Name
     - [x] Description
     - [x] Image
-    - [ ] Follow / unfollow (public)
-    - [ ] Block / unblock (public)
+    - [x] Follow / unfollow (public)
+    - [x] Block / unblock (public)
     - [x] Likes
     - [x] Metadata ("about" messages)
     - [x] Markdown mention
@@ -18,7 +18,7 @@
     - [x] Posts that are thread comments
     - [x] Nested comments in threads
     - [ ] Pagination to view older posts
-    - [ ] Search to filter posts by content
+    - [x] Search to filter posts by content
     - [x] Notifications (by author mention)
     - [x] Content warning
 - [ ] Set

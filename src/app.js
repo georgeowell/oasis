@@ -13,7 +13,8 @@ const requireStyle = require('require-style')
 
 const author = require('./pages/author')
 const hashtag = require('./pages/hashtag')
-const publicPage = require('./pages/public')
+const publicPopularPage = require('./pages/public-popular')
+const publicLatestPage = require('./pages/public-latest')
 const profile = require('./pages/profile')
 const json = require('./pages/json')
 const thread = require('./pages/thread')
@@ -30,6 +31,7 @@ const blob = require('./pages/blob')
 const publish = require('./pages/publish')
 const markdown = require('./pages/markdown')
 const inboxPage = require('./pages/inbox')
+const searchPage = require('./pages/search')
 
 const defaultTheme = 'unikitty-light'
 
@@ -103,20 +105,22 @@ module.exports = (config) => {
       ctx.body = 'User-agent: *\nDisallow: /'
     })
     .get('/', async (ctx) => {
-      ctx.redirect('/public/popular')
+      ctx.redirect('/public/popular/day')
     })
-    .get('/public/comments', async (ctx) => {
-      ctx.body = await publicPage()
-    })
-    .get('/public/popular', async (ctx) => {
-      ctx.body = await publicPage({ sort: 'popular' })
+    .get('/public/popular/:period', async (ctx) => {
+      const { period } = ctx.params
+      ctx.body = await publicPopularPage({ period })
     })
     .get('/public/latest', async (ctx) => {
-      ctx.body = await publicPage({ sort: 'latest' })
+      ctx.body = await publicLatestPage()
     })
     .get('/author/:feed', async (ctx) => {
       const { feed } = ctx.params
       ctx.body = await author(feed)
+    })
+    .get('/search/', async (ctx) => {
+      const { query } = ctx.query
+      ctx.body = await searchPage({ query })
     })
     .get('/inbox', async (ctx) => {
       ctx.body = await inboxPage()
@@ -200,7 +204,7 @@ module.exports = (config) => {
     .post('/publish/', koaBody(), async (ctx) => {
       const text = String(ctx.request.body.text)
       ctx.body = await publish({ text })
-      ctx.redirect('/public/popular')
+      ctx.redirect('/')
     })
     .post('/like/:message', koaBody(), async (ctx) => {
       const { message } = ctx.params
