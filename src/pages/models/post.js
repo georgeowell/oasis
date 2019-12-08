@@ -183,8 +183,7 @@ const post = {
   fromFeed: async (feedId, customOptions = {}) => {
     const ssb = await cooler.connect()
 
-    const whoami = await cooler.get(ssb.whoami)
-    const myFeedId = whoami.id
+    const myFeedId = ssb.id
 
     const options = configure({ id: feedId }, customOptions)
     const source = await cooler.read(
@@ -213,8 +212,7 @@ const post = {
   mentionsMe: async (customOptions = {}) => {
     const ssb = await cooler.connect()
 
-    const whoami = await cooler.get(ssb.whoami)
-    const myFeedId = whoami.id
+    const myFeedId = ssb.id
 
     const query = [{
       $filter: {
@@ -235,8 +233,7 @@ const post = {
   fromHashtag: async (hashtag, customOptions = {}) => {
     const ssb = await cooler.connect()
 
-    const whoami = await cooler.get(ssb.whoami)
-    const myFeedId = whoami.id
+    const myFeedId = ssb.id
 
     const query = [{
       $filter: {
@@ -301,8 +298,7 @@ const post = {
   search: async ({ query }) => {
     const ssb = await cooler.connect()
 
-    const whoami = await cooler.get(ssb.whoami)
-    const myFeedId = whoami.id
+    const myFeedId = ssb.id
 
     const options = configure({
       query
@@ -335,8 +331,7 @@ const post = {
   latest: async () => {
     const ssb = await cooler.connect()
 
-    const whoami = await cooler.get(ssb.whoami)
-    const myFeedId = whoami.id
+    const myFeedId = ssb.id
 
     const options = configure({
       type: 'post',
@@ -381,8 +376,7 @@ const post = {
       throw new Error('invalid period')
     }
 
-    const whoami = await cooler.get(ssb.whoami)
-    const myFeedId = whoami.id
+    const myFeedId = ssb.id
 
     const now = new Date()
     const earliest = Number(now) - (1000 * 60 * 60 * 24 * periodDict[period])
@@ -489,8 +483,7 @@ const post = {
     debug('thread: %s', msgId)
     const ssb = await cooler.connect()
 
-    const whoami = await cooler.get(ssb.whoami)
-    const myFeedId = whoami.id
+    const myFeedId = ssb.id
 
     const options = configure({ id: msgId }, customOptions)
     const rawMsg = await cooler.get(ssb.get, options)
@@ -665,8 +658,7 @@ const post = {
     debug('get: %s', msgId)
     const ssb = await cooler.connect()
 
-    const whoami = await cooler.get(ssb.whoami)
-    const myFeedId = whoami.id
+    const myFeedId = ssb.id
 
     const options = configure({ id: msgId }, customOptions)
     const rawMsg = await cooler.get(ssb.get, options)
@@ -722,8 +714,7 @@ const post = {
   inbox: async (customOptions = {}) => {
     const ssb = await cooler.connect()
 
-    const whoami = await cooler.get(ssb.whoami)
-    const myFeedId = whoami.id
+    const myFeedId = ssb.id
 
     const options = configure({
       type: 'post'
