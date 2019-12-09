@@ -18,6 +18,6 @@ module.exports = ({ messages, prefix = null }) => {
       button({
         type: 'submit'
       }, 'submit')),
-    messages.map((msg) => post({ msg }))
+    messages.map((msg) => post({ msg, summarize: true }))
   )
 }

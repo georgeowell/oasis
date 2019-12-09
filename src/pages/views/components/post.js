@@ -12,14 +12,12 @@ const {
   img,
   section,
   span,
-  summary,
-  pre
+  summary
 } = require('hyperaxe')
 
-const highlightJs = require('highlight.js')
 const lodash = require('lodash')
 
-module.exports = ({ msg }) => {
+module.exports = ({ msg, summarize = false }) => {
   const encoded = {
     key: encodeURIComponent(msg.key),
     author: encodeURIComponent(msg.value.author),
@@ -54,9 +52,11 @@ module.exports = ({ msg }) => {
 
   const depth = lodash.get(msg, 'value.meta.thread.depth', 0)
 
-  const markdownContent = msg.value.meta.md.block()
+  const htmlBlock = msg.value.meta.md.block()
 
   const hasContentWarning = typeof msg.value.content.contentWarning === 'string'
+
+  const markdownContent = htmlBlock
 
   const likeButton = msg.value.meta.voted
     ? { value: 0, class: 'liked' }
@@ -83,21 +83,40 @@ module.exports = ({ msg }) => {
   }
 
   const emptyContent = '<p>undefined</p>\n'
-  const articleElement = markdownContent === emptyContent
-    ? article({ class: 'content' }, pre({
-      innerHTML: highlightJs.highlight(
-        'json',
-        JSON.stringify(msg, null, 2)
-      ).value
-    }))
+
+  const notSupported = markdownContent === emptyContent
+
+  const articleElement = notSupported
+    ? article({ class: 'content' }, '[Message type not supported]')
     : article({ class: 'content', innerHTML: markdownContent })
+
+  const getSummary = (node) => {
+    const separator = '\n'
+    const lines = markdownContent.split(separator)
+    const firstLine = lines[0]
+    const lastLines = lines.slice(1).join(separator)
+
+    const result = (lines.length > 2 && notSupported === false)
+      ? details(
+        summary({ innerHTML: firstLine }),
+        div({ innerHTML: lastLines })
+      )
+      : node
+
+    return result
+  }
 
   const articleContent = hasContentWarning
     ? details(
-      summary(msg.value.content.contentWarning),
+      summary(
+        { class: 'contentWarning' },
+        msg.value.content.contentWarning
+      ),
       articleElement
     )
-    : articleElement
+    : summarize
+      ? getSummary(articleElement)
+      : articleElement
 
   const fragment =
     section({
@@ -137,7 +156,7 @@ module.exports = ({ msg }) => {
           value: likeButton.value,
           class: likeButton.class
         },
-        `❤ ${likeCount}`)),
+            `❤ ${likeCount}`)),
       isPrivate ? null : a({ href: url.reply }, 'reply'),
       isPrivate ? null : a({ href: url.replyAll }, 'reply all'),
       a({ href: url.link }, 'link'),
