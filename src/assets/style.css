@@ -31,7 +31,7 @@
 
   /* size */
   --thin-stroke: 1px;
-  --medium-stroke: 3px;
+  --medium-stroke: 2px;
   --fg-light-stroke: 6px;
   --common-radius: var(--thin-stroke);
 }
@@ -64,7 +64,6 @@ html {
 
 main {
   margin-top: 1rem;
-  margin-bottom: 2rem;
 }
 
 /* https://www.desmos.com/calculator/3elcf5cwhn */
@@ -122,18 +121,13 @@ pre {
 
 .message.private {
   background-color: var(--bg-status);
-}
-
-.message.reply {
-  margin-top: 0;
-  margin-bottom: -1px;
+  border-color: var(--bg);
 }
 
 .message.thread-target {
   border-color: var(--blue);
-
-  /* prevents other messages from overlapping */
-  margin-bottom: 0;
+  margin-bottom: var(--thin-stroke);
+  box-shadow: 0 0 var(--medium-stroke) var(--blue);
 }
 
 .message img,
@@ -186,7 +180,7 @@ pre {
 
   body {
     width: 100%;
-    max-width: 42rem;
+    max-width: 40rem;
     margin: 1rem;
   }
 }
@@ -202,9 +196,9 @@ nav > ul > li > a.current {
 }
 
 .message {
-  padding: 1.5rem;
-  margin: 1rem 0;
+  padding: 1.5rem 1rem;
   border-radius: var(--common-radius);
+  margin-top: calc(0px - var(--thin-stroke));
   border: var(--thin-stroke) solid var(--bg-status);
   word-wrap: break-word;
 }
@@ -275,8 +269,13 @@ nav > ul > li > a.current {
   color: var(--red);
 }
 
+form {
+  padding: 1.5rem 0;
+}
+
 .message > footer > form {
   display: inline-block;
+  padding: 0;
 }
 
 .message > footer > form > button {
@@ -342,7 +341,7 @@ textarea {
   padding: 1rem;
   resize: vertical;
   width: 100%;
-  margin: 1rem 0;
+  margin-bottom: 1.5rem;
   height: 6rem;
   transition: 0.0625s all ease;
   border: var(--thin-stroke) solid var(--bg-status);
