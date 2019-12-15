@@ -10,9 +10,9 @@ const {
   main,
   meta,
   nav,
-  p,
   title,
-  ul
+  ul,
+  section
 } = require('hyperaxe')
 
 const doctypeString = '<!DOCTYPE html>'
@@ -40,7 +40,7 @@ module.exports = (...elements) => {
         })
       ),
       body(
-        p({ class: 'motd' },
+        section({ class: 'motd' },
           'This is a read-only version of Oasis. Trying to publish a like or message will create an internal server error. ',
           a({ href: sourceLink }, 'Download Oasis for full functionality.')
         ),

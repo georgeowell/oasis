@@ -382,13 +382,7 @@ summary {
 }
 
 .motd {
-  padding: var(--small);
-  background-color: var(--bg-status);
-  margin: 0;
-  margin-bottom: var(--small);
-  color: var(--fg);
-  border: var(--thin) solid var(--bg-selection);
-  border-radius: var(--common-radius);
+  border-left: var(--medium) solid var(--yellow);
 }
 
 .md-mention {
