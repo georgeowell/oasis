@@ -19,7 +19,7 @@ module.exports = {
     const ssb = await cooler.connect()
 
     if (await isPublic(ssb)(feedId) !== true) {
-      return '[Redacted]'
+      return 'Redacted'
     }
 
     return cooler.get(

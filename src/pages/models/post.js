@@ -128,9 +128,9 @@ const transform = (ssb, messages, myFeedId) =>
     let [name, avatarMsg, publicWebHosting] = await Promise.all(pending)
 
     if (publicWebHosting !== true) {
-      name = '[Redacted]'
+      name = 'Redacted'
       avatarMsg = ''
-      msg.value.content.text = '[Public messages are redacted by default. Join SSB to see this message.]'
+      msg.value.content.text = 'Public messages are redacted by default. Join SSB to see this message.'
     }
 
     const nullImage = `&${'0'.repeat(43)}=.sha256`
