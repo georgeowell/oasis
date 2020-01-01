@@ -426,7 +426,8 @@ summary {
   -webkit-user-select: all;
   user-select: all;
   background: none;
-  font-size: 50%;
+  font-size: 85%;
+  overflow: hidden;
 }
 
 table {
