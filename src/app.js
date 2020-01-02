@@ -34,6 +34,7 @@ const markdownView = require('./views/markdown')
 const metaView = require('./views/meta')
 const publicView = require('./views/public')
 const replyView = require('./views/reply')
+const searchView = require('./views/search')
 
 const defaultTheme = 'atelier-sulphurPool-light'.toLowerCase()
 
@@ -177,7 +178,9 @@ module.exports = config => {
         query = query.toLowerCase()
       }
 
-      ctx.body = await postModel.search({ query })
+      const messages = await postModel.search({ query })
+
+      ctx.body = searchView({ messages, query })
     })
     .get('/inbox', async ctx => {
       const messages = await postModel.inbox()
@@ -256,7 +259,8 @@ module.exports = config => {
       ctx.attachment(blobId, { type: 'inline' })
     })
     .get('/image/:imageSize/:blobId', async ctx => {
-      const { blobId, imageSize } = ctx.params
+      const { blobId, imageSize: stringImageSize } = ctx.params
+      const imageSize = Number(stringImageSize)
       ctx.type = 'image/png'
 
       const fakePixel = Buffer.from(
@@ -359,7 +363,7 @@ module.exports = config => {
       debug('%O', rootMessage)
       const messages = [rootMessage]
 
-      ctx.body = replyView({ messages, myFeedId })
+      ctx.body = await replyView({ messages, myFeedId })
     })
     .get('/comment/:message', async ctx => {
       const { message } = ctx.params
@@ -383,8 +387,9 @@ module.exports = config => {
       const messages = await postModel.threadReplies(rootMessage.key)
 
       messages.push(rootMessage)
+      console.log('wat')
 
-      ctx.body = commentView({ messages, myFeedId, parentMessage })
+      ctx.body = await commentView({ messages, myFeedId, parentMessage })
     })
     .post('/reply/:message', koaBody(), async ctx => {
       const { message } = ctx.params
