@@ -46,6 +46,8 @@ module.exports = (config) => {
     // Output full error objects
     e.message = e.stack
     e.expose = true
+
+    console.error(e)
     return null
   })
 
