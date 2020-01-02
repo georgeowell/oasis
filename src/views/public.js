@@ -20,20 +20,24 @@ module.exports = ({ messages, prefix = null }) => {
     prefix,
     section(
       header(strong('🌐 Publish')),
-      form({ action: publishForm, method: 'post' },
+      form(
+        { action: publishForm, method: 'post' },
         label(
           { for: 'text' },
           'Write a new message in ',
-          a({
-            href: 'https://commonmark.org/help/',
-            target: '_blank'
-          }, 'Markdown'),
+          a(
+            {
+              href: 'https://commonmark.org/help/',
+              target: '_blank'
+            },
+            'Markdown'
+          ),
           '. Messages cannot be edited or deleted.'
         ),
         textarea({ required: true, name: 'text' }),
         button({ type: 'submit' }, 'submit')
       )
     ),
-    messages.map((msg) => post({ msg }))
+    messages.map(msg => post({ msg }))
   )
 }

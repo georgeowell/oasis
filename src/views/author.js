@@ -28,10 +28,13 @@ module.exports = ({
   const mention = `[@${name}](${feedId})`
   const markdownMention = highlightJs.highlight('markdown', mention).value
 
-  const prefix = section({ class: 'message' },
-    header({ class: 'profile' },
+  const prefix = section(
+    { class: 'message' },
+    header(
+      { class: 'profile' },
       img({ class: 'avatar', src: avatarUrl }),
-      h1(name)),
+      h1(name)
+    ),
     pre({
       class: 'md-mention',
       innerHTML: markdownMention
@@ -47,6 +50,6 @@ module.exports = ({
 
   return template(
     prefix,
-    messages.map((msg) => post({ msg }))
+    messages.map(msg => post({ msg }))
   )
 }

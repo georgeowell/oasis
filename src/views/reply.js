@@ -1,25 +1,20 @@
 'use strict'
 
-const {
-  p,
-  a,
-  strong,
-  button,
-  form,
-  textarea
-} = require('hyperaxe')
+const { p, a, strong, button, form, textarea } = require('hyperaxe')
 const debug = require('debug')('oasis')
 
 const template = require('./components/template')
 const post = require('./components/post')
 
 module.exports = async ({ messages, myFeedId }) => {
-  const replyForm = `/reply/${encodeURIComponent(messages[messages.length - 1].key)}`
+  const replyForm = `/reply/${encodeURIComponent(
+    messages[messages.length - 1].key
+  )}`
 
   let markdownMention
 
   const messageElements = await Promise.all(
-    messages.reverse().map((message) => {
+    messages.reverse().map(message => {
       debug('%O', message)
       const authorName = message.value.meta.author.name
       const authorFeedId = message.value.author
@@ -35,7 +30,8 @@ module.exports = async ({ messages, myFeedId }) => {
 
   return template(
     messageElements,
-    p('Write a ',
+    p(
+      'Write a ',
       strong('public reply'),
       ' to this message with ',
       a({ href: 'https://commonmark.org/help/' }, 'Markdown'),
@@ -43,14 +39,22 @@ module.exports = async ({ messages, myFeedId }) => {
       strong('comment'),
       ' instead.'
     ),
-    form({ action: replyForm, method: 'post' },
-      textarea({
-        autofocus: true,
-        required: true,
-        name: 'text'
-      }, markdownMention),
-      button({
-        type: 'submit'
-      }, 'reply'))
+    form(
+      { action: replyForm, method: 'post' },
+      textarea(
+        {
+          autofocus: true,
+          required: true,
+          name: 'text'
+        },
+        markdownMention
+      ),
+      button(
+        {
+          type: 'submit'
+        },
+        'reply'
+      )
+    )
   )
 }

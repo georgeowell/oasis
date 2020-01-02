@@ -1,48 +1,50 @@
 'use strict'
 
 const Koa = require('koa')
-const path = require('path')
-const router = require('koa-router')()
+const debug = require('debug')('oasis')
+const koaBody = require('koa-body')
 const koaStatic = require('koa-static')
 const mount = require('koa-mount')
 const open = require('open')
-const koaBody = require('koa-body')
-const debug = require('debug')('oasis')
-const ssbRef = require('ssb-ref')
+const path = require('path')
+const pull = require('pull-stream')
 const requireStyle = require('require-style')
+const router = require('koa-router')()
+const ssbMentions = require('ssb-mentions')
+const ssbRef = require('ssb-ref')
 
-const author = require('./pages/author')
-const hashtag = require('./pages/hashtag')
-const publicPopularPage = require('./pages/public-popular')
-const publicLatestPage = require('./pages/public-latest')
-const profile = require('./pages/profile')
-const json = require('./pages/json')
-const thread = require('./pages/thread')
-const like = require('./pages/like')
-const likesPage = require('./pages/likes')
-const meta = require('./pages/meta')
-const mentions = require('./pages/mentions')
-const reply = require('./pages/reply')
-const comment = require('./pages/comment')
-const publishReply = require('./pages/publish-reply')
-const publishComment = require('./pages/publish-comment')
-const image = require('./pages/image')
-const blob = require('./pages/blob')
-const publish = require('./pages/publish')
-const markdown = require('./pages/markdown')
-const inboxPage = require('./pages/inbox')
-const searchPage = require('./pages/search')
+let sharp
+try {
+  sharp = require('sharp')
+} catch (e) {
+  // Optional dependency
+}
+
+const aboutModel = require('./models/about')
+const blobModel = require('./models/blob')
+const friendModel = require('./models/friend')
+const metaModel = require('./models/meta')
+const postModel = require('./models/post')
+const voteModel = require('./models/vote')
+
+const authorView = require('./views/author')
+const commentView = require('./views/comment')
+const listView = require('./views/list')
+const markdownView = require('./views/markdown')
+const metaView = require('./views/meta')
+const publicView = require('./views/public')
+const replyView = require('./views/reply')
 
 const defaultTheme = 'atelier-sulphurPool-light'.toLowerCase()
 
-module.exports = (config) => {
+module.exports = config => {
   const assets = new Koa()
   assets.use(koaStatic(path.join(__dirname, 'assets')))
 
   const app = new Koa()
   module.exports = app
 
-  app.on('error', (e) => {
+  app.on('error', e => {
     // Output full error objects
     e.message = e.stack
     e.expose = true
@@ -58,11 +60,11 @@ module.exports = (config) => {
     await next()
 
     const csp = [
-      'default-src \'none\'',
-      'img-src \'self\'',
-      'form-action \'self\'',
-      'media-src \'self\'',
-      'style-src \'self\' \'unsafe-inline\''
+      "default-src 'none'",
+      "img-src 'self'",
+      "form-action 'self'",
+      "media-src 'self'",
+      "style-src 'self' 'unsafe-inline'"
     ].join('; ')
 
     // Disallow scripts.
@@ -78,14 +80,17 @@ module.exports = (config) => {
     ctx.set('Referrer-Policy', 'same-origin')
 
     // Disallow extra browser features except audio output.
-    ctx.set('Feature-Policy', 'speaker \'self\'')
+    ctx.set('Feature-Policy', "speaker 'self'")
 
     if (ctx.method !== 'GET') {
       const referer = ctx.request.header.referer
       ctx.assert(referer != null, `HTTP ${ctx.method} must include referer`)
       const refererUrl = new URL(referer)
       const isBlobUrl = refererUrl.pathname.startsWith('/blob/')
-      ctx.assert(isBlobUrl === false, `HTTP ${ctx.method} from blob URL not allowed`)
+      ctx.assert(
+        isBlobUrl === false,
+        `HTTP ${ctx.method} from blob URL not allowed`
+      )
     }
   })
 
@@ -95,7 +100,10 @@ module.exports = (config) => {
       const isInteger = size % 1 === 0
       const overMinSize = size > 2
       const underMaxSize = size <= 256
-      ctx.assert(isInteger && overMinSize && underMaxSize, 'Invalid image size')
+      ctx.assert(
+        isInteger && overMinSize && underMaxSize,
+        'Invalid image size'
+      )
       return next()
     })
     .param('blobId', (blobId, ctx, next) => {
@@ -110,32 +118,79 @@ module.exports = (config) => {
       ctx.assert(ssbRef.isFeedId(message), 400, 'Invalid feed link')
       return next()
     })
-    .get('/', async (ctx) => {
+    .get('/', async ctx => {
       ctx.redirect('/public/popular/day')
     })
-    .get('/public/popular/:period', async (ctx) => {
+    .get('/public/popular/:period', async ctx => {
+      // TODO: Fix layer violation. The controller should not be making HTML.
+      const { nav, ul, li, a } = require('hyperaxe')
+
       const { period } = ctx.params
-      ctx.body = await publicPopularPage({ period })
+      const messages = await postModel.popular({ period })
+
+      const option = somePeriod =>
+        li(
+          period === somePeriod
+            ? a({ class: 'current', href: `./${somePeriod}` }, somePeriod)
+            : a({ href: `./${somePeriod}` }, somePeriod)
+        )
+
+      const prefix = nav(
+        ul(option('day'), option('week'), option('month'), option('year'))
+      )
+
+      ctx.body = publicView({
+        messages,
+        prefix
+      })
     })
-    .get('/public/latest', async (ctx) => {
-      ctx.body = await publicLatestPage()
+    .get('/public/latest', async ctx => {
+      const messages = await postModel.latest()
+      ctx.body = publicView({ messages })
     })
-    .get('/author/:feed', async (ctx) => {
+    .get('/author/:feed', async ctx => {
       const { feed } = ctx.params
-      ctx.body = await author(feed)
+      const feedId = feed
+      const description = await aboutModel.description(feedId)
+      const name = await aboutModel.name(feedId)
+      const image = await aboutModel.image(feedId)
+      const aboutPairs = await aboutModel.all(feedId)
+      const messages = await postModel.fromFeed(feedId)
+      const relationship = await friendModel.getRelationship(feedId)
+
+      const avatarUrl = `/image/256/${encodeURIComponent(image)}`
+
+      ctx.body = authorView({
+        feedId,
+        messages,
+        name,
+        description,
+        avatarUrl,
+        aboutPairs,
+        relationship
+      })
     })
-    .get('/search/', async (ctx) => {
-      const { query } = ctx.query
-      ctx.body = await searchPage({ query })
+    .get('/search/', async ctx => {
+      let { query } = ctx.query
+      if (typeof query === 'string') {
+        // https://github.com/ssbc/ssb-search/issues/7
+        query = query.toLowerCase()
+      }
+
+      ctx.body = await postModel.search({ query })
     })
-    .get('/inbox', async (ctx) => {
-      ctx.body = await inboxPage()
+    .get('/inbox', async ctx => {
+      const messages = await postModel.inbox()
+
+      ctx.body = listView({ messages })
     })
-    .get('/hashtag/:channel', async (ctx) => {
+    .get('/hashtag/:channel', async ctx => {
       const { channel } = ctx.params
-      ctx.body = await hashtag(channel)
+      const messages = await postModel.fromHashtag(channel)
+
+      ctx.body = listView({ messages })
     })
-    .get('/theme.css', (ctx) => {
+    .get('/theme.css', ctx => {
       const theme = ctx.cookies.get('theme') || defaultTheme
 
       const packageName = '@fraction/base16-css'
@@ -143,17 +198,53 @@ module.exports = (config) => {
       ctx.type = 'text/css'
       ctx.body = requireStyle(filePath)
     })
-    .get('/profile/', async (ctx) => {
-      ctx.body = await profile()
+    .get('/profile/', async ctx => {
+      const myFeedId = await metaModel.myFeedId()
+
+      const description = await aboutModel.description(myFeedId)
+      const name = await aboutModel.name(myFeedId)
+      const image = await aboutModel.image(myFeedId)
+      const aboutPairs = await aboutModel.all(myFeedId)
+
+      const messages = await postModel.fromFeed(myFeedId)
+
+      const avatarUrl = `/image/256/${encodeURIComponent(image)}`
+
+      ctx.body = authorView({
+        feedId: myFeedId,
+        messages,
+        name,
+        description,
+        avatarUrl,
+        aboutPairs,
+        relationship: null
+      })
     })
-    .get('/json/:message', async (ctx) => {
+    .get('/json/:message', async ctx => {
       const { message } = ctx.params
       ctx.type = 'application/json'
-      ctx.body = await json(message)
+      const json = await metaModel.get(message)
+      ctx.body = JSON.stringify(json, null, 2)
     })
-    .get('/blob/:blobId', async (ctx) => {
+    .get('/blob/:blobId', async ctx => {
       const { blobId } = ctx.params
-      ctx.body = await blob({ blobId })
+      const bufferSource = await blobModel.get({ blobId })
+
+      debug('got buffer source')
+      ctx.body = await new Promise(resolve => {
+        pull(
+          bufferSource,
+          pull.collect(async (err, bufferArray) => {
+            if (err) {
+              await blobModel.want({ blobId })
+              resolve(Buffer.alloc(0))
+            } else {
+              const buffer = Buffer.concat(bufferArray)
+              resolve(buffer)
+            }
+          })
+        )
+      })
 
       if (ctx.body.length === 0) {
         ctx.response.status = 404
@@ -164,56 +255,179 @@ module.exports = (config) => {
       // This prevents an auto-download when visiting the URL.
       ctx.attachment(blobId, { type: 'inline' })
     })
-    .get('/image/:imageSize/:blobId', async (ctx) => {
+    .get('/image/:imageSize/:blobId', async ctx => {
       const { blobId, imageSize } = ctx.params
       ctx.type = 'image/png'
-      ctx.body = await image({ blobId, imageSize: Number(imageSize) })
+
+      const fakePixel = Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+        'base64'
+      )
+
+      const fakeImage = imageSize =>
+        sharp
+          ? sharp({
+            create: {
+              width: imageSize,
+              height: imageSize,
+              channels: 4,
+              background: {
+                r: 0,
+                g: 0,
+                b: 0,
+                alpha: 0.5
+              }
+            }
+          })
+          : new Promise(resolve => resolve(fakePixel))
+
+      const fakeId = '&0000000000000000000000000000000000000000000=.sha256'
+
+      const bufferSource = await blobModel.get({ blobId })
+
+      debug('got buffer source')
+      ctx.body = await new Promise(resolve => {
+        if (blobId === fakeId) {
+          debug('fake image')
+          fakeImage(imageSize).then(result => resolve(result))
+        } else {
+          debug('not fake image')
+          pull(
+            bufferSource,
+            pull.collect(async (err, bufferArray) => {
+              if (err) {
+                await blobModel.want({ blobId })
+                const result = fakeImage(imageSize)
+                debug({ result })
+                resolve(result)
+              } else {
+                const buffer = Buffer.concat(bufferArray)
+
+                if (sharp) {
+                  sharp(buffer)
+                    .resize(imageSize, imageSize)
+                    .png()
+                    .toBuffer()
+                    .then(data => {
+                      resolve(data)
+                    })
+                } else {
+                  resolve(buffer)
+                }
+              }
+            })
+          )
+        }
+      })
     })
-    .get('/meta/', async (ctx) => {
+    .get('/meta/', async ctx => {
       const theme = ctx.cookies.get('theme') || defaultTheme
-      ctx.body = await meta({ theme })
+      const status = await metaModel.status()
+      const peers = await metaModel.peers()
+
+      const { themeNames } = require('@fraction/base16-css')
+
+      ctx.body = metaView({ status, peers, theme, themeNames })
     })
-    .get('/likes/:feed', async (ctx) => {
+    .get('/likes/:feed', async ctx => {
       const { feed } = ctx.params
-      ctx.body = await likesPage({ feed })
+      const messages = await postModel.likes({ feed })
+      ctx.body = listView({ messages })
     })
-    .get('/meta/readme/', async (ctx) => {
-      ctx.body = await markdown(config.readme)
+    .get('/meta/readme/', async ctx => {
+      ctx.body = await markdownView(config.readme)
     })
-    .get('/mentions/', async (ctx) => {
-      ctx.body = await mentions()
+    .get('/mentions/', async ctx => {
+      const messages = await postModel.mentionsMe()
+
+      ctx.body = listView({ messages })
     })
-    .get('/thread/:message', async (ctx) => {
+    .get('/thread/:message', async ctx => {
       const { message } = ctx.params
-      ctx.body = await thread(message)
+      const messages = await postModel.fromThread(message)
+      debug('got %i messages', messages.length)
+
+      ctx.body = listView({ messages })
     })
-    .get('/reply/:message', async (ctx) => {
+    .get('/reply/:message', async ctx => {
       const { message } = ctx.params
-      ctx.body = await reply(message)
+      const parentId = message
+
+      const rootMessage = await postModel.get(parentId)
+      const myFeedId = await metaModel.myFeedId()
+
+      debug('%O', rootMessage)
+      const messages = [rootMessage]
+
+      ctx.body = replyView({ messages, myFeedId })
     })
-    .get('/comment/:message', async (ctx) => {
+    .get('/comment/:message', async ctx => {
       const { message } = ctx.params
-      ctx.body = await comment(message)
+      const parentId = message
+      const parentMessage = await postModel.get(parentId)
+      const myFeedId = await metaModel.myFeedId()
+
+      const hasRoot =
+        typeof parentMessage.value.content.root === 'string' &&
+        ssbRef.isMsg(parentMessage.value.content.root)
+      const hasFork =
+        typeof parentMessage.value.content.fork === 'string' &&
+        ssbRef.isMsg(parentMessage.value.content.fork)
+
+      const rootMessage = hasRoot
+        ? hasFork
+          ? parentMessage
+          : await postModel.get(parentMessage.value.content.root)
+        : parentMessage
+
+      const messages = await postModel.threadReplies(rootMessage.key)
+
+      messages.push(rootMessage)
+
+      ctx.body = commentView({ messages, myFeedId, parentMessage })
     })
-    .post('/reply/:message', koaBody(), async (ctx) => {
+    .post('/reply/:message', koaBody(), async ctx => {
       const { message } = ctx.params
       const text = String(ctx.request.body.text)
-      ctx.body = await publishReply({ message, text })
+      // TODO: rename `message` to `parent` or `ancestor` or similar
+      const mentions =
+        ssbMentions(text).filter(mention => mention != null) || undefined
+
+      const parent = await postModel.get(message)
+      ctx.body = await postModel.reply({
+        parent,
+        message: { text, mentions }
+      })
       ctx.redirect(`/thread/${encodeURIComponent(message)}`)
     })
-    .post('/comment/:message', koaBody(), async (ctx) => {
+    .post('/comment/:message', koaBody(), async ctx => {
       const { message } = ctx.params
       const text = String(ctx.request.body.text)
-      ctx.body = await publishComment({ message, text })
+      // TODO: rename `message` to `parent` or `ancestor` or similar
+      const mentions =
+        ssbMentions(text).filter(mention => mention != null) || undefined
+      const parent = await metaModel.get(message)
+
+      ctx.body = await postModel.comment({
+        parent,
+        message: { text, mentions }
+      })
       ctx.redirect(`/thread/${encodeURIComponent(message)}`)
     })
-    .post('/publish/', koaBody(), async (ctx) => {
+    .post('/publish/', koaBody(), async ctx => {
       const text = String(ctx.request.body.text)
-      ctx.body = await publish({ text })
+      const mentions =
+        ssbMentions(text).filter(mention => mention != null) || undefined
+
+      ctx.body = await postModel.root({
+        text,
+        mentions
+      })
       ctx.redirect('/')
     })
-    .post('/like/:message', koaBody(), async (ctx) => {
+    .post('/like/:message', koaBody(), async ctx => {
       const { message } = ctx.params
+
       // TODO: convert all so `message` is full message and `messageKey` is key
       const messageKey = message
 
@@ -226,10 +440,35 @@ module.exports = (config) => {
       const referer = new URL(ctx.request.header.referer)
       referer.hash = `centered-footer-${encoded.message}`
 
-      ctx.body = await like({ messageKey, voteValue })
+      const value = Number(voteValue)
+      const messageData = await postModel.get(messageKey)
+
+      const isPrivate = messageData.value.meta.private === true
+      const messageRecipients = isPrivate
+        ? messageData.value.content.recps
+        : []
+      const normalized = messageRecipients.map(recipient => {
+        if (typeof recipient === 'string') {
+          return recipient
+        }
+
+        if (typeof recipient.link === 'string') {
+          return recipient.link
+        }
+
+        return null
+      })
+
+      const recipients = normalized.length > 0 ? normalized : undefined
+
+      ctx.body = await voteModel.publish({
+        messageKey,
+        value,
+        recps: recipients
+      })
       ctx.redirect(referer)
     })
-    .post('/theme.css', koaBody(), async (ctx) => {
+    .post('/theme.css', koaBody(), async ctx => {
       const theme = String(ctx.request.body.theme)
       ctx.cookies.set('theme', theme)
       const referer = new URL(ctx.request.header.referer)

@@ -23,26 +23,17 @@ const template = require('./components/template')
 module.exports = ({ status, peers, theme, themeNames }) => {
   const max = status.sync.since
 
-  const progressElements = Object.entries(status.sync.plugins).map((e) => {
+  const progressElements = Object.entries(status.sync.plugins).map(e => {
     const [key, val] = e
     const id = `progress-${key}`
-    return div(
-      label({ for: id }, key),
-      progress({ id, value: val, max }, val)
-    )
+    return div(label({ for: id }, key), progress({ id, value: val, max }, val))
   })
 
-  const peerList = (peers || [])
-    .map(([key, data]) =>
-      li(
-        a(
-          { href: `/author/${encodeURIComponent(data.key)}` },
-          code(data.key)
-        )
-      )
-    )
+  const peerList = (peers || []).map(([key, data]) =>
+    li(a({ href: `/author/${encodeURIComponent(data.key)}` }, code(data.key)))
+  )
 
-  const themeElements = themeNames.map((cur) => {
+  const themeElements = themeNames.map(cur => {
     const isCurrentTheme = cur === theme
     if (isCurrentTheme) {
       return option({ value: cur, selected: true }, cur)
@@ -70,11 +61,11 @@ module.exports = ({ status, peers, theme, themeNames }) => {
     '0F'
   ]
 
-  const base16Elements = base16.map((base) =>
+  const base16Elements = base16.map(base =>
     div({
       style: {
         'background-color': `var(--base${base})`,
-        width: `${1 / base16.length * 100}%`,
+        width: `${(1 / base16.length) * 100}%`,
         height: '1em',
         'margin-top': '1em',
         display: 'inline-block'
@@ -83,7 +74,8 @@ module.exports = ({ status, peers, theme, themeNames }) => {
   )
 
   return template(
-    section({ class: 'message' },
+    section(
+      { class: 'message' },
       h1('Meta'),
       p(
         'Check out ',
@@ -91,17 +83,19 @@ module.exports = ({ status, peers, theme, themeNames }) => {
         ', configure your theme, or view debugging information below.'
       ),
       h2('Theme'),
-      p('Choose from any theme you\'d like. The default theme is Atelier-SulphurPool-Light.'),
-      form({ action: '/theme.css', method: 'post' },
+      p(
+        "Choose from any theme you'd like. The default theme is Atelier-SulphurPool-Light."
+      ),
+      form(
+        { action: '/theme.css', method: 'post' },
         select({ name: 'theme' }, ...themeElements),
-        button({ type: 'submit' }, 'set theme')),
+        button({ type: 'submit' }, 'set theme')
+      ),
       base16Elements,
       h2('Status'),
       h3('Indexes'),
       progressElements,
-      peerList.length > 0
-        ? [h3('Peers'), ul(peerList)]
-        : null
+      peerList.length > 0 ? [h3('Peers'), ul(peerList)] : null
     )
   )
 }

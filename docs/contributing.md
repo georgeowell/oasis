@@ -33,26 +33,26 @@ I have a hunch that importing modules from parent directories makes it really
 easy to create spaghetti code that's difficult to learn and maintain. I don't
 know whether that's true, but I'm experimenting with a layer-based approach
 where modules always `require('./some-layer/some-module')`. I don't know
-whether this *actually* has any interesting properties, but I'm trying it out
+whether this _actually_ has any interesting properties, but I'm trying it out
 to see whether it results in simpler software architectures.
 
 #### Pattern
 
 ```javascript
-require('./foo/bar')
-require('./lib/widget-factory')
-require('./tools/quark-smasher')
+require("./foo/bar");
+require("./lib/widget-factory");
+require("./tools/quark-smasher");
 ```
 
 #### Anti-pattern
 
 ```javascript
-require('../../../great-grandparent-frankie')
-require('./sibling-jamie')
-require('./wat') // same as `require('./wat/index')
+require("../../../great-grandparent-frankie");
+require("./sibling-jamie");
+require("./wat"); // same as `require('./wat/index')
 ```
 
-**Note:** I want to make *very* clear that this is an experiment, not a claim
+**Note:** I want to make _very_ clear that this is an experiment, not a claim
 that this is Objectively Better. It's also important to note that the essential
 bit here is the [dependency graph][dep-graph], not the directory tree. I'm using
 the directory tree as a proxy for the dependency graph because it's simple, but
@@ -76,7 +76,6 @@ the dependency graph of the following directory trees are identical:
 └── f
 ```
 
-
 ### Any my [hyper]axe
 
 Converting JSON data to HTML templates is hard work. I started with Swig but
@@ -99,7 +98,7 @@ so I'm counting this as another experiment. It looks great and my first day with
 it has been really enjoyable, but if something goes horribly wrong then we can
 switch to hyperscript-helpers or something.
 
-**Note:** I wasn't aware of hyperscript-helpers until I *after* I refactored
+**Note:** I wasn't aware of hyperscript-helpers until I _after_ I refactored
 the templates to use hyperaxe. Oops. I think hyperaxe has a cooler name anyway.
 
 [dep-graph]: https://en.wikipedia.org/wiki/Dependency_graph

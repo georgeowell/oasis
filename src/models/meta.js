@@ -9,7 +9,7 @@ module.exports = {
     const { id } = ssb
     return id
   },
-  get: async (msgId) => {
+  get: async msgId => {
     const ssb = await cooler.connect()
     return cooler.get(ssb.get, {
       id: msgId,

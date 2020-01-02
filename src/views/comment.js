@@ -1,13 +1,6 @@
 'use strict'
 
-const {
-  a,
-  button,
-  form,
-  textarea,
-  p,
-  strong
-} = require('hyperaxe')
+const { a, button, form, textarea, p, strong } = require('hyperaxe')
 
 const debug = require('debug')('oasis:views:comment')
 const template = require('./components/template')
@@ -17,7 +10,7 @@ module.exports = async ({ messages, myFeedId, parentMessage }) => {
   let markdownMention
 
   const messageElements = await Promise.all(
-    messages.reverse().map((message) => {
+    messages.reverse().map(message => {
       debug('%O', message)
       const authorName = message.value.meta.author.name
       const authorFeedId = message.value.author
@@ -36,7 +29,8 @@ module.exports = async ({ messages, myFeedId, parentMessage }) => {
 
   return template(
     messageElements,
-    p('Write a ',
+    p(
+      'Write a ',
       strong('public comment'),
       ' on this thread with ',
       a({ href: 'https://commonmark.org/help/' }, 'Markdown'),
@@ -44,14 +38,22 @@ module.exports = async ({ messages, myFeedId, parentMessage }) => {
       strong('reply'),
       ' instead.'
     ),
-    form({ action, method },
-      textarea({
-        autofocus: true,
-        required: true,
-        name: 'text'
-      }, markdownMention),
-      button({
-        type: 'submit'
-      }, 'comment'))
+    form(
+      { action, method },
+      textarea(
+        {
+          autofocus: true,
+          required: true,
+          name: 'text'
+        },
+        markdownMention
+      ),
+      button(
+        {
+          type: 'submit'
+        },
+        'comment'
+      )
+    )
   )
 }

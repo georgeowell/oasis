@@ -1,13 +1,10 @@
 ---
 name: "🐞 Bug report"
 about: Report a problem with this software
-title: ''
-labels: ''
-assignees: ''
-
----
-
-**What version of this package are you using?**
+title: ""
+labels: ""
+assignees: ""
+---**What version of this package are you using?**
 
 **What operating system, Node.js, and npm version?**
 

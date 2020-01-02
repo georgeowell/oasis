@@ -28,8 +28,7 @@ const config = yargs
     describe: 'Use verbose output for debugging',
     default: false,
     type: 'boolean'
-  })
-  .argv
+  }).argv
 
 // This hides arguments from other upstream modules who might parse them.
 //

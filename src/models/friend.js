@@ -3,20 +3,17 @@
 const cooler = require('./lib/cooler')
 
 module.exports = {
-  isFollowing: async (feedId) => {
+  isFollowing: async feedId => {
     const ssb = await cooler.connect()
     const { id } = ssb
 
-    const isFollowing = await cooler.get(
-      ssb.friends.isFollowing,
-      {
-        source: id,
-        dest: feedId
-      }
-    )
+    const isFollowing = await cooler.get(ssb.friends.isFollowing, {
+      source: id,
+      dest: feedId
+    })
     return isFollowing
   },
-  getRelationship: async (feedId) => {
+  getRelationship: async feedId => {
     const ssb = await cooler.connect()
     const { id } = ssb
 
@@ -24,21 +21,15 @@ module.exports = {
       return 'this is you'
     }
 
-    const isFollowing = await cooler.get(
-      ssb.friends.isFollowing,
-      {
-        source: id,
-        dest: feedId
-      }
-    )
+    const isFollowing = await cooler.get(ssb.friends.isFollowing, {
+      source: id,
+      dest: feedId
+    })
 
-    const isBlocking = await cooler.get(
-      ssb.friends.isBlocking,
-      {
-        source: id,
-        dest: feedId
-      }
-    )
+    const isBlocking = await cooler.get(ssb.friends.isBlocking, {
+      source: id,
+      dest: feedId
+    })
 
     if (isFollowing === true && isBlocking === false) {
       return 'you are following'

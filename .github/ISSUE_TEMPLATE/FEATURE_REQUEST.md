@@ -1,13 +1,10 @@
 ---
 name: "⭐️ Feature request"
 about: Request a new feature to be added
-title: ''
-labels: ''
-assignees: ''
-
----
-
-**What version of this package are you using?**
+title: ""
+labels: ""
+assignees: ""
+---**What version of this package are you using?**
 
 **What problem do you want to solve?**
 
