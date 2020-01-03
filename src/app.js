@@ -284,40 +284,39 @@ module.exports = config => {
 
       const bufferSource = await blobModel.get({ blobId })
 
-      debug('got buffer source')
-      ctx.body = await new Promise(resolve => {
-        if (blobId === fakeId) {
-          debug('fake image')
-          fakeImage(imageSize).then(result => resolve(result))
-        } else {
-          debug('not fake image')
-          pull(
-            bufferSource,
-            pull.collect(async (err, bufferArray) => {
-              if (err) {
-                await blobModel.want({ blobId })
-                const result = fakeImage(imageSize)
-                debug({ result })
-                resolve(result)
-              } else {
-                const buffer = Buffer.concat(bufferArray)
+      // TODO: Refactor below so we only have one `ctx.body =`
+      if (blobId === fakeId) {
+        debug('fake image')
+        const result = await fakeImage(imageSize)
+        ctx.body = result
+      } else {
+        debug('not fake image')
+        pull(
+          bufferSource,
+          pull.collect(async (err, bufferArray) => {
+            if (err) {
+              await blobModel.want({ blobId })
+              const result = fakeImage(imageSize)
+              debug({ result })
+              ctx.body = result
+            } else {
+              const buffer = Buffer.concat(bufferArray)
 
-                if (sharp) {
-                  sharp(buffer)
-                    .resize(imageSize, imageSize)
-                    .png()
-                    .toBuffer()
-                    .then(data => {
-                      resolve(data)
-                    })
-                } else {
-                  resolve(buffer)
-                }
+              if (sharp) {
+                sharp(buffer)
+                  .resize(imageSize, imageSize)
+                  .png()
+                  .toBuffer()
+                  .then(data => {
+                    ctx.body = data
+                  })
+              } else {
+                ctx.body = buffer
               }
-            })
-          )
-        }
-      })
+            }
+          })
+        )
+      }
     })
     .get('/meta/', async ctx => {
       const theme = ctx.cookies.get('theme') || defaultTheme
@@ -382,7 +381,6 @@ module.exports = config => {
       const messages = await postModel.threadReplies(rootMessage.key)
 
       messages.push(rootMessage)
-      console.log('wat')
 
       ctx.body = await commentView({ messages, myFeedId, parentMessage })
     })
@@ -481,8 +479,7 @@ module.exports = config => {
   const { port } = config
   const uri = `http://${host}:${port}/`
 
-  debug.enabled = true
-  debug(`Listening on ${uri}`)
+  console.error(`Listening on ${uri}`)
 
   app.listen({ host, port })
 
