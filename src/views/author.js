@@ -17,7 +17,6 @@ const post = require('./components/post')
 const template = require('./components/template')
 
 module.exports = ({
-  aboutPairs,
   avatarUrl,
   description,
   feedId,

@@ -514,9 +514,9 @@ const post = {
 
             pull(
               pull.values(arr),
-              pullSort(([aKey, aVal], [bKey, bVal]) => bVal - aVal),
+              pullSort(([, aVal], [, bVal]) => bVal - aVal),
               pull.take(Math.min(length, maxMessages)),
-              pull.map(([key, value]) => key),
+              pull.map(([key]) => key),
               pullParallelMap(async (key, cb) => {
                 try {
                   const msg = await post.get(key)

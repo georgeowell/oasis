@@ -29,7 +29,7 @@ module.exports = ({ status, peers, theme, themeNames }) => {
     return div(label({ for: id }, key), progress({ id, value: val, max }, val))
   })
 
-  const peerList = (peers || []).map(([key, data]) =>
+  const peerList = (peers || []).map(([, data]) =>
     li(a({ href: `/author/${encodeURIComponent(data.key)}` }, code(data.key)))
   )
 

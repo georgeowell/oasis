@@ -155,7 +155,6 @@ module.exports = config => {
       const description = await aboutModel.description(feedId)
       const name = await aboutModel.name(feedId)
       const image = await aboutModel.image(feedId)
-      const aboutPairs = await aboutModel.all(feedId)
       const messages = await postModel.fromFeed(feedId)
       const relationship = await friendModel.getRelationship(feedId)
 
@@ -167,7 +166,6 @@ module.exports = config => {
         name,
         description,
         avatarUrl,
-        aboutPairs,
         relationship
       })
     })
@@ -207,8 +205,6 @@ module.exports = config => {
       const description = await aboutModel.description(myFeedId)
       const name = await aboutModel.name(myFeedId)
       const image = await aboutModel.image(myFeedId)
-      const aboutPairs = await aboutModel.all(myFeedId)
-
       const messages = await postModel.fromFeed(myFeedId)
 
       const avatarUrl = `/image/256/${encodeURIComponent(image)}`
@@ -219,7 +215,6 @@ module.exports = config => {
         name,
         description,
         avatarUrl,
-        aboutPairs,
         relationship: null
       })
     })
