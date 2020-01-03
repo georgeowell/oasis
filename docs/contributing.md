@@ -7,11 +7,10 @@ promises about the future architecture, but today it's pretty simple:
 index.js: take command-line arguments and give an application over HTTP
  └── src: take HTTP requests and give an asset or a dynamic HTML page
      ├── assets: give static assets like CSS and images
-     └── pages: take parameters and give an HTML page that with inline data
-         ├── models: give an abstract interface for interacting with data
-         │   └── lib: give database driver, Markdown renderer, etc.
-         └── views: take data and give an HTML page
-             └── components: take data and give HTML components (sub-views)
+     ├── models: give an abstract interface for interacting with data
+     │   └── lib: give database driver, Markdown renderer, etc.
+     └── views: take data and give an HTML page
+         └── components: take data and give HTML components (sub-views)
 ```
 
 I'd really appreciate any issues or pull requests on GitHub. Please let me know
