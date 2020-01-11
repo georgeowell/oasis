@@ -28,7 +28,7 @@
       - [ ] Description
       - [ ] Image
     - [ ] Others
-      - [ ] Follow / unfollow (public)
+      - [x] Follow / unfollow (public)
       - [ ] Block / unblock (public)
   - [ ] Posts
     - [x] New
